@@ -61,10 +61,25 @@ def _cargar_config_ia():
 
 _cargar_config_ia()
 
+def _memoria_activa():
+    """La memoria local sólo se activa donde tiene sentido.
+
+    - ``LOGICA_APRENDIZAJE=0`` la desactiva siempre.
+    - ``LOGICA_APRENDIZAJE=1`` la activa siempre.
+    - Sin variable, se desactiva en servidores públicos (Render define
+      ``RENDER``) para no compartir un mismo archivo entre visitantes.
+    """
+    valor = os.environ.get("LOGICA_APRENDIZAJE", "").strip()
+    if valor == "0":
+        return False
+    if valor == "1":
+        return True
+    return not os.environ.get("RENDER")
+
+
 # Memoria compartida por todas las peticiones.  Es un JSON local: no sale
 # nada de este ordenador.
-APRENDIZAJE = None if os.environ.get("LOGICA_APRENDIZAJE") == "0" \
-    else Aprendizaje()
+APRENDIZAJE = Aprendizaje() if _memoria_activa() else None
 
 
 # ==========================================================================
@@ -823,6 +838,12 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(datos)
 
     # -- rutas -------------------------------------------------------------
+    def do_HEAD(self):
+        """Render y otros servicios usan HEAD para comprobar la salud."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.end_headers()
+
     def do_GET(self):
         ruta = urlparse(self.path).path
         if ruta == "/api/salud":
