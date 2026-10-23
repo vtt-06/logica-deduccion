@@ -1,0 +1,2206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#3c096c">
+  <title>Lógica — deducción asistida</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="saltar" href="#entrada">Ir al formulario</a>
+
+  <div class="accesos-laterales">
+    <button type="button" id="btn-definiciones"
+            class="acceso-lateral acceso-lateral--definiciones"
+            aria-controls="menu-definiciones" aria-expanded="false"
+            title="Abrir las definiciones literales">
+      <svg class="acceso-lateral__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 3.5h12A1.5 1.5 0 0 1 19.5 5v14A1.5 1.5 0 0 1 18 20.5H6A1.5 1.5 0 0 1 4.5 19V5A1.5 1.5 0 0 1 6 3.5Z"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linejoin="round"/>
+        <path d="M8 7.5h8M8 11h8M8 14.5h5"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round"/>
+      </svg>
+      <span>Definiciones</span>
+    </button>
+    <button type="button" id="btn-teoria"
+            class="acceso-lateral acceso-lateral--teoria"
+            aria-controls="menu-teoria" aria-expanded="false"
+            title="Abrir la guía de teoría">
+      <svg class="acceso-lateral__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4.5 5.5A2.5 2.5 0 0 1 7 3h5v17H7a2.5 2.5 0 0 0-2.5 2.5V5.5Z"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linejoin="round"/>
+        <path d="M19.5 5.5A2.5 2.5 0 0 0 17 3h-5v17h5a2.5 2.5 0 0 1 2.5 2.5V5.5Z"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linejoin="round"/>
+      </svg>
+      <span>Teoría</span>
+    </button>
+  </div>
+
+  <div class="accesos-derecha">
+    <button type="button" id="btn-verdad"
+            class="acceso-lateral acceso-lateral--verdad acceso-lateral--derecha"
+            aria-controls="menu-verdad" aria-expanded="false"
+            title="Abrir las tablas de verdad">
+      <svg class="acceso-lateral__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3.5" y="4.5" width="17" height="15" rx="2.2"
+              fill="none" stroke="currentColor" stroke-width="1.7"/>
+        <path d="M3.5 9.5h17M9.3 9.5v10M14.7 9.5v10M3.5 14.5h17"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round"/>
+      </svg>
+      <span>Tablas de verdad</span>
+    </button>
+  </div>
+
+  <header class="cabecera">
+    <div class="cabecera__interior">
+      <div class="marca">
+        <span class="marca__simbolo" aria-hidden="true">¬∧→</span>
+        <div>
+          <p class="marca__etiqueta">Lógica · Cálculo de proposiciones y predicados</p>
+          <h1>De la frase a la deducción</h1>
+        </div>
+      </div>
+      <p class="cabecera__texto">
+        Escribe las premisas y la conclusión en español. La aplicación propone
+        la formalización, la puedes corregir y genera la deducción paso a paso
+        con las reglas del curso.
+      </p>
+      <ol class="pasos" aria-label="Pasos">
+        <li class="paso activo" data-paso="1"><span>1</span> Escribe</li>
+        <li class="paso" data-paso="2"><span>2</span> Revisa</li>
+        <li class="paso" data-paso="3"><span>3</span> Deduce</li>
+      </ol>
+    </div>
+    <div class="cabecera__onda" aria-hidden="true"></div>
+  </header>
+
+  <main class="contenido">
+
+    <!-- ================= PASO 1 ================= -->
+    <section id="entrada" class="tarjeta" aria-labelledby="titulo-entrada">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-entrada">1. Escribe el ejercicio</h2>
+        <p>Puedes escribir una frase por línea o varias en la misma línea:
+          se separan por puntos. Marca la conclusión con <code>=&gt;</code>
+          delante, o empieza la última frase por «Por tanto», «Por
+          consiguiente», «Por conclusión»… y la aplicación pondrá la flecha
+          automáticamente.</p>
+      </div>
+
+      <div class="control" role="group" aria-label="Cálculo">
+        <button type="button" class="segmento activo" data-calculo="prop">
+          Proposiciones
+        </button>
+        <button type="button" class="segmento" data-calculo="pred">
+          Predicados <span class="segmento__pista">Λ / V</span>
+        </button>
+      </div>
+
+      <label class="etiqueta" for="frases">Frases del ejercicio</label>
+      <textarea id="frases" class="area" rows="7" spellcheck="true"
+        placeholder="Si no corro, corro.&#10;=> Por tanto, sino puedo andar, corro."></textarea>
+
+      <div class="voz">
+        <button type="button" id="btn-voz" class="boton boton--voz"
+                aria-pressed="false">
+          <svg class="boton__icono" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v5a3 3 0 0 0 3 3Z"
+                  fill="none" stroke="currentColor" stroke-width="1.8"/>
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3M8 21h8"
+                  fill="none" stroke="currentColor" stroke-width="1.8"
+                  stroke-linecap="round"/>
+          </svg>
+          <span class="boton__texto">Dictar</span>
+          <span class="boton__cargando" hidden>Detener</span>
+        </button>
+        <span id="estado-voz" class="voz__estado" role="status"
+              aria-live="polite"></span>
+      </div>
+
+      <div class="ejemplos" aria-label="Ejemplos">
+        <span class="ejemplos__titulo">Probar con:</span>
+        <button type="button" class="chip" data-ejemplo="corro">Si no corro…</button>
+        <button type="button" class="chip" data-ejemplo="examen">Examen de proposiciones</button>
+        <button type="button" class="chip" data-ejemplo="predicados">Examen de predicados</button>
+        <button type="button" class="chip" data-ejemplo="clima">Lluvia y frío</button>
+      </div>
+
+      <div class="acciones">
+        <button type="button" id="btn-resolver" class="boton boton--principal">
+          <span class="boton__texto">Formalizar y deducir</span>
+          <span class="boton__cargando" hidden>Calculando…</span>
+        </button>
+        <button type="button" id="btn-limpiar" class="boton boton--fantasma">
+          Limpiar
+        </button>
+      </div>
+
+      <p id="aviso-entrada" class="aviso" role="alert" hidden></p>
+
+      <aside class="ayuda">
+        <h3>¿Cómo se escribe?</h3>
+        <ul>
+          <li>La conclusión va precedida de <code>=&gt;</code>; también vale
+            empezar por «Por tanto», «Por consiguiente», «Por conclusión»,
+            «En consecuencia» o «Así que»: la flecha se añade sola.</li>
+          <li>El botón «Dictar» usa el reconocimiento de voz del navegador; en
+            algunos navegadores el audio se envía a su proveedor. Necesita
+            permiso de micrófono y funciona mejor en Chrome o Edge.</li>
+          <li>Puedes usar <code>si…, entonces…</code>, <code>sólo si</code>,
+            <code>a menos que</code>, <code>y</code>, <code>o</code>,
+            <code>no</code>, <code>ni…ni</code>, <code>aunque</code>.</li>
+          <li>En predicados: <code>todos los…</code>, <code>algún…</code>,
+            <code>ningún…</code>, <code>sólo los…</code>.</li>
+        </ul>
+      </aside>
+    </section>
+
+    <!-- ================= PASO 2 ================= -->
+    <section id="formalizacion" class="tarjeta" aria-labelledby="titulo-formal"
+             hidden>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-formal">2. Revisa la formalización</h2>
+        <p>
+          Esta es la propuesta. Puedes corregir cualquier fórmula antes de
+          deducir; se aceptan <code>¬ ∧ ∨ → ↔</code> y
+          <code>(Λx)</code>, <code>(Vx)</code>.
+        </p>
+      </div>
+      <div id="lista-formulas" class="formulas"></div>
+
+      <details class="vocabulario">
+        <summary>Vocabulario sugerido <span>(opcional)</span></summary>
+        <p class="vocabulario__texto">
+          Sólo se usa para que las explicaciones sean más legibles. Puedes
+          dejar los textos que aparecen.
+        </p>
+        <div id="lista-vocabulario" class="vocabulario__lista"></div>
+      </details>
+
+      <div class="acciones">
+        <button type="button" id="btn-deducir" class="boton boton--principal">
+          <span class="boton__texto">Deducir</span>
+          <span class="boton__cargando" hidden>Buscando…</span>
+        </button>
+        <button type="button" id="btn-reformalizar" class="boton boton--secundario">
+          Volver a formalizar
+        </button>
+        <button type="button" id="btn-consultar-ia"
+                class="boton boton--fantasma" hidden>
+          <span class="boton__texto">Consultar IA</span>
+          <span class="boton__cargando" hidden>Consultando…</span>
+        </button>
+      </div>
+
+      <p id="aviso-formal" class="aviso" role="alert" hidden></p>
+    </section>
+
+    <!-- ================= PASO 3 ================= -->
+    <section id="resultado" class="tarjeta" aria-labelledby="titulo-resultado"
+             hidden>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-resultado">3. Deducción</h2>
+        <p>Notación del libro: <code>−</code> premisa, <code>⌈</code> supuesto,
+          <code>|</code> línea auxiliar, <code>⌊</code> cierre.</p>
+      </div>
+
+      <div id="resumen-ejercicio" class="resumen"></div>
+
+      <div class="prueba" aria-label="Deducción formal">
+        <div id="lineas-prueba" class="prueba__lineas"></div>
+      </div>
+
+      <div class="acciones">
+        <button type="button" id="btn-copiar" class="boton boton--secundario">
+          Copiar deducción
+        </button>
+        <button type="button" id="btn-descargar" class="boton boton--fantasma">
+          Descargar .txt
+        </button>
+      </div>
+      <p id="aviso-copiar" class="aviso aviso--ok" role="status" hidden></p>
+    </section>
+
+    <!-- ================= EXPLICACIÓN ================= -->
+    <section id="explicacion" class="tarjeta" aria-labelledby="titulo-explicacion"
+             hidden>
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-explicacion">Cómo se ha hecho</h2>
+        <p>
+          Primero se traduce cada frase, después se aplica una regla en cada
+          línea hasta llegar a la conclusión.
+        </p>
+      </div>
+
+      <ol class="metodo">
+        <li>
+          <h3>Formalización</h3>
+          <p>Cada frase se convierte en una fórmula. Las premisas se numeran
+            y la última línea es la conclusión que hay que alcanzar.</p>
+        </li>
+        <li>
+          <h3>Búsqueda de la deducción</h3>
+          <p>El motor encadena las reglas del cálculo: modus ponens, tollens,
+            simplificación, silogismo… Cuando la meta es una implicación abre
+            un supuesto y la cierra con <strong>TD</strong>.</p>
+        </li>
+        <li>
+          <h3>Justificación</h3>
+          <p>Cada línea cita las líneas anteriores que utiliza. Abajo tienes
+            la explicación de por qué se aplica cada regla.</p>
+        </li>
+      </ol>
+
+      <div class="explicaciones">
+        <h3 class="explicaciones__titulo">Línea a línea</h3>
+        <div id="lista-explicaciones" class="explicaciones__lista"></div>
+      </div>
+
+      <div class="glosario">
+        <h3>Reglas que aparecen en esta deducción</h3>
+        <div id="lista-reglas" class="glosario__lista"></div>
+      </div>
+    </section>
+
+    <section class="tarjeta tarjeta--suave" aria-labelledby="titulo-guia">
+      <div class="tarjeta__cabecera">
+        <h2 id="titulo-guia">Reglas de uso rápido</h2>
+        <p>Lo que hace falta recordar antes de escribir.</p>
+      </div>
+      <div class="guia">
+        <div>
+          <h3>Dirección del condicional</h3>
+          <ul>
+            <li><code>Si A, B</code> → <code>A → B</code></li>
+            <li><code>A si B</code> → <code>B → A</code></li>
+            <li><code>A sólo si B</code> → <code>A → B</code></li>
+            <li><code>Sólo si A, B</code> → <code>B → A</code></li>
+            <li><code>A a menos que B</code> → <code>¬A → B</code></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Conectivas</h3>
+          <ul>
+            <li><code>no</code> / <code>no es cierto que</code> → <code>¬</code></li>
+            <li><code>y</code>, <code>pero</code>, <code>aunque</code> → <code>∧</code></li>
+            <li><code>o</code>, <code>o bien</code> → <code>∨</code></li>
+            <li><code>si y sólo si</code> → <code>↔</code></li>
+            <li>
+              Precedencia del libro: <code>¬</code>; luego <code>∧</code> y
+              <code>∨</code>; luego <code>→</code> y <code>↔</code>.
+              Si mezclas conectivas del mismo nivel, usa paréntesis:
+              <code>(p∨q)∧r</code>, <code>p→(q→r)</code>.
+            </li>
+          </ul>
+        </div>
+        <div>
+          <h3>Consejos</h3>
+          <ul>
+            <li>Puedes escribir varias frases en una línea: se separan por
+              puntos.</li>
+            <li>Si una frase aparece con un aviso naranja, el analizador la ha
+              tratado como átomo pero puede tener estructura lógica: revisa la
+              fórmula o pulsa «Consultar IA».</li>
+            <li>Si no aparece la deducción, revisa primero la formalización.</li>
+            <li>Las explicaciones usan los números de línea de la prueba.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="aprendizaje">
+        <div>
+          <h3>Memoria de frases</h3>
+          <p id="texto-aprendizaje">
+            Cada ejercicio que deduces se guarda en este ordenador para
+            reconocer frases parecidas la próxima vez.
+          </p>
+          <p class="aprendizaje__privacidad">
+            La memoria es local. Si el servidor tiene una IA configurada, las
+            frases dudosas y los resúmenes de búsqueda se envían a ese
+            servicio; las fórmulas propuestas se marcan como «IA».
+          </p>
+          <p id="estado-ia" class="aprendizaje__privacidad"></p>
+        </div>
+        <div class="aprendizaje__acciones">
+          <button type="button" id="btn-ver-memoria" class="boton boton--principal">
+            Ver memoria de frases
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <p class="nota-red">
+      Para abrirlo desde el móvil o la tablet, usa la dirección
+      <code>http://IP-del-ordenador:8000</code> estando en la misma red WiFi.
+    </p>
+  </main>
+
+  <!-- ================= MENÚ SECUNDARIO: DEFINICIONES ================= -->
+  <div id="menu-definiciones" class="menu-teoria menu-definiciones"
+       role="dialog" aria-modal="true"
+       aria-labelledby="titulo-menu-definiciones" hidden>
+    <div class="menu-teoria__panel">
+      <header class="menu-teoria__cabecera">
+        <div>
+          <p class="menu-teoria__etiqueta">Menú secundario · Definiciones literales</p>
+          <h2 id="titulo-menu-definiciones">Definiciones del curso</h2>
+          <p class="menu-teoria__intro">
+            Definiciones de los Apuntes de Lógica (114 págs.) y del libro
+            <em>Lógica simbólica para informáticos</em>, de Pascual. Las que
+            aparecen en ambos textos se muestran una sola vez.
+          </p>
+        </div>
+        <button type="button" id="btn-cerrar-definiciones"
+                class="menu-teoria__cerrar">
+          <span aria-hidden="true">×</span> Cerrar
+        </button>
+      </header>
+
+      <div class="menu-teoria__cuerpo">
+        <nav class="menu-teoria__indice" aria-label="Contenido de las definiciones">
+          <p class="menu-teoria__indice-titulo">Capítulos</p>
+          <a href="#definiciones-argumentos">1. Argumentos y enunciados</a>
+          <a href="#definiciones-enunciados">2. Lógica de enunciados</a>
+          <a href="#definiciones-formas">3. Formas argumentativas</a>
+          <a href="#definiciones-sistemas">4. Sistemas formales</a>
+          <a href="#definiciones-natural">5. Deducción natural</a>
+          <a href="#definiciones-sintaxis">6. Predicados: sintaxis</a>
+          <a href="#definiciones-semantica">7. Predicados: semántica</a>
+          <a href="#definiciones-kl">8. Cálculo KL</a>
+        </nav>
+
+        <div class="menu-teoria__contenido">
+          <div class="definiciones-aviso">
+            <p><strong>Texto literal.</strong> No se han reescrito las
+              definiciones: se conserva la redacción de los documentos y solo
+              se han normalizado acentos y símbolos tipográficos. Cuando una
+              definición aparece en ambos textos, se muestra una vez con la
+              redacción de los Apuntes de 114 páginas.</p>
+            <p>En la aplicación, <code>∀</code> se escribe <code>(Λx)</code> y
+              <code>∃</code> se escribe <code>(Vx)</code>.</p>
+          </div>
+
+          <!-- 1 -->
+          <section id="definiciones-argumentos" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulo 1</p>
+            <h3>Argumentos y enunciados</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Lógica</h4>
+              <div class="definicion__texto">
+                <p>La lógica investiga la relación de consecuencia que se da
+                  entre una serie de premisas y la conclusión de un argumento
+                  correcto.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Argumento</h4>
+              <div class="definicion__texto">
+                <p>Por un argumento entendemos un sistema de enunciados, de un
+                  lenguaje determinado. Uno de esos enunciados es designado
+                  como la conclusión y el resto como las premisas.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Enunciado</h4>
+              <div class="definicion__texto">
+                <p>Un enunciado se define como una expresión lingüística que
+                  establece un pensamiento completo.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Argumento correcto (válido)</h4>
+              <div class="definicion__texto">
+                <p>Se dice que un argumento es correcto (válido) si su
+                  conclusión se sigue o es consecuencia de sus premisas; de
+                  otro modo es incorrecto.</p>
+                <p>Un argumento es correcto si y solamente si no es posible que
+                  sus premisas sean verdaderas y su conclusión falsa.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Enunciado analítico</h4>
+              <div class="definicion__texto">
+                <p>Un enunciado es analítico si y solamente si en cualquier
+                  circunstancia concebible es verdadero.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Principio de bivalencia</h4>
+              <div class="definicion__texto">
+                <p>Todo enunciado o es verdadero o es falso, pero no ambas
+                  cosas a la vez.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 2 -->
+          <section id="definiciones-enunciados" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulos 1 y 2</p>
+            <h3>Lógica de enunciados</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.4.1</span> Forma enunciativa
+              </h4>
+              <div class="definicion__texto">
+                <p>Una forma enunciativa es una expresión, en la que
+                  intervienen variables de enunciado y conectivas, que puede
+                  formarse utilizando las siguientes reglas:</p>
+                <ol>
+                  <li>Toda letra enunciativa <code>p</code>, <code>q</code>,
+                    <code>r</code>, ... es una forma enunciativa correcta.</li>
+                  <li>Si <code>A</code> y <code>B</code> son formas
+                    enunciativas correctas, también son formas enunciativas
+                    correctas: <code>(¬A)</code>, <code>(¬B)</code>,
+                    <code>(A ∧ B)</code>, <code>(A ∨ B)</code>,
+                    <code>(A → B)</code> y <code>(A ↔ B)</code>.</li>
+                  <li>Sólo son formas enunciativas correctas las que cumplen
+                    las reglas 1 y 2.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.1.3</span> Grado de una forma enunciativa
+              </h4>
+              <div class="definicion__texto">
+                <p>El grado de una forma enunciativa es una aplicación del
+                  conjunto de las formas enunciativas al conjunto de los
+                  números naturales N:</p>
+                <ol>
+                  <li><code>grado(A) = 0</code>, si <code>A</code> es una letra
+                    enunciativa.</li>
+                  <li>Si <code>A</code> y <code>B</code> son formas
+                    enunciativas:
+                    <ol type="a">
+                      <li><code>grado(¬A) = 1 + grado(A)</code>,</li>
+                      <li><code>grado(A ∧ B) = 1 + grado(A) + grado(B)</code>,</li>
+                      <li><code>grado(A ∨ B) = 1 + grado(A) + grado(B)</code>,</li>
+                      <li><code>grado(A → B) = 1 + grado(A) + grado(B)</code>,</li>
+                      <li><code>grado(A ↔ B) = 1 + grado(A) + grado(B)</code>.</li>
+                    </ol>
+                  </li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.5.2</span> Atribución veritativa
+              </h4>
+              <div class="definicion__texto">
+                <p>Dada una forma enunciativa <code>A</code>. Llamamos
+                  atribución veritativa a una asignación, <code>α</code>, de
+                  valores de verdad al conjunto, <code>{p1, p2, ..., pn}</code>
+                  de variables enunciativas de <code>A</code>. Es decir, una
+                  atribución veritativa es una aplicación
+                  <code>α : {p1, p2, ..., pn} → {V, F}</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.5.3</span> Valoración
+              </h4>
+              <div class="definicion__texto">
+                <p>Dada una atribución veritativa, <code>α</code>, una
+                  valoración es una función <code>ϑ</code> cuyo dominio es el
+                  conjunto de las formas enunciativas y cuyo rango es el
+                  conjunto <code>{V, F}</code>, tal que para cualesquiera
+                  formas enunciativas <code>A</code> y <code>B</code>.</p>
+                <ol>
+                  <li><code>ϑ(A) = α(A)</code> si <code>A</code> es una
+                    variable enunciativa;</li>
+                  <li><code>ϑ(¬A) = V</code> si <code>ϑ(A) = F</code>;</li>
+                  <li><code>ϑ(A ∧ B) = V</code> si <code>ϑ(A) = V</code> y
+                    <code>ϑ(B) = V</code>;</li>
+                  <li><code>ϑ(A ∨ B) = V</code> si <code>ϑ(A) = V</code> o
+                    <code>ϑ(B) = V</code>;</li>
+                  <li><code>ϑ(A → B) = V</code> si no es el caso que
+                    <code>ϑ(A) = V</code> y <code>ϑ(B) = F</code>;</li>
+                  <li><code>ϑ(A ↔ B) = V</code> si
+                    <code>ϑ(A) = ϑ(B)</code>;</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.5.5</span> Lógicamente equivalentes
+              </h4>
+              <div class="definicion__texto">
+                <p>Dadas dos formas enunciativas, <code>A</code> y
+                  <code>B</code>, con funciones veritativas <code>fA</code> y
+                  <code>fB</code> asociadas. Se dice que <code>A</code> y
+                  <code>B</code> son lógicamente equivalentes, denotado
+                  <code>A ⇔ B</code>, si <code>fA</code> y <code>fB</code> son
+                  la misma función de verdad.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.5.7</span> Tautología, contradicción y contingencia
+              </h4>
+              <div class="definicion__texto">
+                <ol>
+                  <li>Una forma enunciativa es una tautología si toma el valor
+                    de verdad <code>V</code> bajo toda valoración.</li>
+                  <li>Una forma enunciativa es una contradicción si toma el
+                    valor de verdad <code>F</code> bajo toda valoración.</li>
+                  <li>Una forma enunciativa es una contingencia si toma el
+                    valor de verdad <code>V</code> para unas valoraciones y
+                    <code>F</code> para otras.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.0.1</span> Conjunto adecuado de conectivas
+              </h4>
+              <div class="definicion__texto">
+                <p>Un conjunto adecuado de conectivas es un conjunto tal que
+                  toda función enunciativa puede representarse por medio de una
+                  forma enunciativa en la que sólo intervienen conectivas de ese
+                  conjunto.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 3 -->
+          <section id="definiciones-formas" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulos 1 y 2</p>
+            <h3>Formas argumentativas</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.7.1</span> Forma argumentativa
+              </h4>
+              <div class="definicion__texto">
+                <p>Una forma argumentativa es una sucesión finita de formas
+                  enunciativas, de las cuales la última se considera la
+                  conclusión y el resto las premisas.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">1.7.2</span> Forma argumentativa válida
+              </h4>
+              <div class="definicion__texto">
+                <p>La forma argumentativa</p>
+                <p class="definicion__formula">A1, A2, ..., An △ A</p>
+                <p>es inválida si existe una atribución veritativa tal que
+                  <code>A1, A2, ..., An</code> toman el valor <code>V</code> y
+                  <code>A</code> toma el valor <code>F</code>. En otro caso la
+                  forma argumentativa es válida.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.5.3</span> Consecuencia lógica (enunciados)
+              </h4>
+              <div class="definicion__texto">
+                <p>Dado el conjunto de formas enunciativas
+                  <code>Γ = {A1, A2, ..., An}</code> y la forma enunciativa
+                  <code>A</code>. <code>A</code> es una consecuencia lógica del
+                  conjunto <code>Γ</code> si y sólo si, para toda valoración
+                  <code>v</code>, tal que <code>v(Ai) = V</code>, para cada
+                  <code>Ai ∈ Γ</code>, entonces <code>v(A) = V</code>.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 4 -->
+          <section id="definiciones-sistemas" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulo 2</p>
+            <h3>Sistemas formales y cálculo L</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.0.4</span> Sistema formal, S
+              </h4>
+              <div class="definicion__texto">
+                <ul>
+                  <li>Un vocabulario: Un conjunto (infinito numerable) de
+                    símbolos a utilizar en <code>S</code>.</li>
+                  <li>Reglas que establezcan qué cadenas de signos son fórmulas
+                    bien formados en <code>S</code>.</li>
+                  <li>Un conjunto de las definiciones utilizadas.</li>
+                  <li>Un conjunto de fórmulas bien formados de <code>S</code>
+                    que van a utilizarse como axiomas.</li>
+                  <li>Un conjunto finito de reglas de inferencia y de reglas de
+                    construcción de una deducción en <code>S</code>.</li>
+                  <li>Las condiciones necesarias y suficientes que debe reunir
+                    una deducción para dar como resultado un teorema de
+                    <code>S</code>.</li>
+                  <li>Axiomas adicionales de <code>S</code>.</li>
+                </ul>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.1.1</span> Sistema formal L
+              </h4>
+              <div class="definicion__texto">
+                <p>El sistema formal <code>L</code> del cálculo de enunciados
+                  está caracterizado por:</p>
+                <ol>
+                  <li>Vocabulario: el conjunto de símbolos infinito (numerable)
+                    <code>{¬, →, (, ), p1, p2, p3, ...}</code>.</li>
+                  <li>Conjunto de fbf’s:
+                    <ol type="a">
+                      <li><code>p1, p2, p3, ...</code> son fbf’s.</li>
+                      <li>Si <code>A</code> y <code>B</code> son fbf’s, entonces
+                        <code>(¬A)</code> y <code>(A → B)</code> son fbf’s.</li>
+                      <li>El conjunto de todas las fbf’s es el generado por las
+                        reglas a y b.</li>
+                    </ol>
+                  </li>
+                  <li>Definiciones:
+                    <ol type="a">
+                      <li><code>(A ∧ B)</code> es abreviatura de:
+                        <code>(¬(A → (¬B)))</code>.</li>
+                      <li><code>(A ∨ B)</code> es abreviatura de:
+                        <code>((¬A) → B)</code>.</li>
+                      <li><code>(A ↔ B)</code> es abreviatura de:
+                        <code>(¬((A → B)→ (¬(B → A))))</code>.</li>
+                    </ol>
+                  </li>
+                  <li>Axiomas: Cualesquiera que sean las fbf’s <code>A</code>,
+                    <code>B</code> y <code>C</code>, las siguientes fbf’s son
+                    axiomas de <code>L</code>:
+                    <ol type="a">
+                      <li><code>(L1) (A → (B → A))</code></li>
+                      <li><code>(L2) ((A → (B → C))→ ((A → B)→ (A → C)))</code></li>
+                      <li><code>(L3) (((¬A)→ (¬B))→ (B → A))</code></li>
+                    </ol>
+                  </li>
+                  <li>Reglas de inferencia: Regla modus ponens (MP): de
+                    <code>A</code> y <code>(A → B)</code> se puede inferir como
+                    consecuencia inmediata <code>B</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.2.1</span> Deducción en L
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea <code>Γ</code> un conjunto de fbf’s de <code>L</code>.</p>
+                <p>Una sucesión finita <code>A1, A2, ..., An</code> de fbf’s de
+                  <code>L</code>, es una deducción a partir de <code>Γ</code> si
+                  para todo <code>i ∈ {1, 2, ..., n}</code> se cumple alguna de
+                  las siguientes condiciones:</p>
+                <ol>
+                  <li><code>Ai</code> es un axioma de <code>L</code>,</li>
+                  <li><code>Ai ∈ Γ</code></li>
+                  <li><code>Ai</code> se infiere inmediatamente de dos miembros
+                    anteriores de la sucesión, digamos <code>Aj</code> y
+                    <code>Ak</code> (con <code>j &lt; i</code> y
+                    <code>k &lt; i</code>), mediante la aplicación de la regla
+                    MP.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.2.3</span> Demostración en L
+              </h4>
+              <div class="definicion__texto">
+                <p>Una demostración en <code>L</code> es una deducción en
+                  <code>L</code> sin premisas. Si la fbf <code>A</code> es el
+                  último miembro de una demostración, decimos que <code>A</code>
+                  es un teorema de <code>L</code> y escribimos
+                  <code>⊢L A</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.4.2</span> Consistencia e inconsistencia
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea <code>Γ</code> un conjunto de fbf’s.</p>
+                <ol>
+                  <li><code>Γ</code> es inconsistente si y sólo si cualquier fbf
+                    de <code>L</code> es deducible a partir de <code>Γ</code>.</li>
+                  <li><code>Γ</code> es consistente si y sólo si no es
+                    inconsistente. Esto es, existe alguna fbf de <code>L</code>
+                    que no puede deducirse a partir de <code>Γ</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.4.9</span> Algoritmo
+              </h4>
+              <div class="definicion__texto">
+                <p>Conjunto de instrucciones explícito que permite realizar una
+                  tarea de cómputo (no necesariamente numérico), que puede
+                  usarse para encontrar la respuesta de cualquier pregunta de
+                  entre las de una clase.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.4.10</span> Indecidibilidad
+              </h4>
+              <div class="definicion__texto">
+                <p>Un sistema formal <code>S</code> es (recursivamente)
+                  indecidible si y sólo si, no existe ningún algoritmo que pueda
+                  responder a preguntas de la clase:</p>
+                <p>¿Es <code>A</code> un teorema de <code>S</code>?, donde
+                  <code>A</code> es una fbf de <code>S</code>.</p>
+                <p>En caso contrario diremos que el sistema es decidible.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">2.5.1</span> Demostrablemente equivalentes
+              </h4>
+              <div class="definicion__texto">
+                <p>Sean <code>A</code> y <code>B</code> fbf de <code>L</code>.
+                  <code>A</code> y <code>B</code> son demostrablemente
+                  equivalentes si y sólo si <code>⊢L (A ↔ B)</code>.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 5 -->
+          <section id="definiciones-natural" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulo 3</p>
+            <h3>Deducción natural</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">3.2.1</span> Deducción (o derivación)
+              </h4>
+              <div class="definicion__texto">
+                <p>Una deducción (o derivación) es una secuencia finita de
+                  fórmulas tales que cada una de ellas es:</p>
+                <ol>
+                  <li>un supuesto inicial o premisa inicial, fórmulas
+                    hipotéticamente dadas desde el principio de la derivación,
+                    o</li>
+                  <li>un supuesto provisional o subsidiario, que debe estar
+                    cancelado antes de la conclusión, o</li>
+                  <li>una fórmula derivada lógicamente de las anteriores por
+                    inferencia inmediata, que denominaremos consecuencias
+                    lógicas inmediatas.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Demostración o prueba</h4>
+              <div class="definicion__texto">
+                <p>La última línea de la derivación es la conclusión. Una
+                  demostración o prueba es una deducción sin supuestos
+                  iniciales.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Reglas básicas de inferencia</h4>
+              <div class="definicion__texto">
+                <p>Las reglas que gobiernan las operaciones deductivas por las
+                  que de una o dos fórmulas ya probadas se pasa a una tercera,
+                  se denominan reglas básicas de inferencia.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">Regla derivada</h4>
+              <div class="definicion__texto">
+                <p>Una regla derivada es una derivación a la que, por su
+                  importancia, se le da el rango de regla de inferencia.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 6 -->
+          <section id="definiciones-sintaxis" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulos 4 y 5</p>
+            <h3>Lógica de predicados: sintaxis</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.3.2</span> Término de L
+              </h4>
+              <div class="definicion__texto">
+                <ol>
+                  <li>Si <code>t ∈ V ∪ C</code> entonces <code>t</code> es un
+                    término. Esto es, toda variable o constante de
+                    <code>L</code> es un término de <code>L</code>.</li>
+                  <li>Si <code>t1, t2, ..., tn</code> son términos de
+                    <code>L</code> y <code>fn</code> es un functor n-ádico de
+                    <code>L</code> entonces <code>fn(t1, t2, ..., tn)</code> es
+                    un término de <code>L</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.3.4</span> Fórmula atómica
+              </h4>
+              <div class="definicion__texto">
+                <p>Si <code>t1, t2, ..., tn</code> son términos de
+                  <code>L</code> y <code>Rn</code> es un relator n-ádico de
+                  <code>L</code> entonces <code>Rn(t1, t2, ..., tn)</code> es
+                  una fórmula atómica de <code>L</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.3.6</span> Fórmula bien formada
+              </h4>
+              <div class="definicion__texto">
+                <ol>
+                  <li>Toda fórmula atómica de <code>L</code> es una fbf.</li>
+                  <li>Si <code>A</code> y <code>B</code> son fbf’s de
+                    <code>L</code>, también lo son: <code>(¬A)</code>,
+                    <code>(¬B)</code>, <code>(A ∧ B)</code>,
+                    <code>(A ∨ B)</code>, <code>(A → B)</code> y
+                    <code>(A ↔ B)</code>.</li>
+                  <li>Si <code>A</code> es una fbf de <code>L</code> y
+                    <code>x ∈ V</code> entonces <code>(∀x)A</code> y
+                    <code>(∃x)A</code> son fbf’s.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.3.8</span> Radio de acción y ocurrencias
+              </h4>
+              <div class="definicion__texto">
+                <ol>
+                  <li>Radio de acción de un cuantificador:
+                    <ol type="a">
+                      <li>En la fbf <code>(∀x)A</code> el radio de acción de
+                        <code>(∀x)</code> es <code>A</code>.</li>
+                      <li>En la fbf <code>(∃x)A</code> el radio de acción de
+                        <code>(∃x)</code> es <code>A</code>.</li>
+                    </ol>
+                  </li>
+                  <li>Ocurrencia ligada de una variable: si aparece dentro del
+                    radio de acción de un cuantificador universal
+                    <code>(∀x)</code> o uno existencial <code>(∃x)</code>.</li>
+                  <li>Ocurrencia libre de una variable: si su aparición no es
+                    ligada.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.3.8</span> Fórmula cerrada y fórmula abierta
+              </h4>
+              <div class="definicion__texto">
+                <p>Una fbf de <code>L</code> se dice que es una fórmula cerrada
+                  si y sólo si en ella no aparecen variables libres. En caso
+                  contrario se dice que es una fórmula abierta.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 7 -->
+          <section id="definiciones-semantica" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulos 4 y 5</p>
+            <h3>Lógica de predicados: semántica</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.1</span> Interpretación
+              </h4>
+              <div class="definicion__texto">
+                <p>Una interpretación <code>I</code> de <code>L</code> es un
+                  par <code>(DI, J)</code> que consiste en:</p>
+                <ol>
+                  <li>Un conjunto no vacío <code>DI</code>, el dominio de
+                    <code>I</code>.</li>
+                  <li>Una aplicación <code>J</code> que asigna:
+                    <ol type="a">
+                      <li>A cada símbolo de constante, <code>ai</code>, de
+                        <code>L</code> un elemento distinguido de
+                        <code>DI</code>; <code>J(ai) = ai</code>.</li>
+                      <li>A cada functor <code>fn i</code> n-ario de
+                        <code>L</code> una función
+                        <code>J(fn i) = fn i</code> tal que
+                        <code>fn i : Dn I → DI</code>.</li>
+                      <li>A cada relator <code>Rn i</code> n-ario de
+                        <code>L</code> una relación
+                        <code>J(Rn i) = Rn i</code> tal que
+                        <code>Rn i ⊂ Dn I</code>, esto es un conjunto de
+                        n-tuplas de <code>Dn I</code>,
+                        <code>Rn i = {(d1, ..., dn) | di ∈ DI}</code>.</li>
+                    </ol>
+                  </li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.3</span> Valoración en I
+              </h4>
+              <div class="definicion__texto">
+                <p>Una valoración <code>v</code> en <code>I</code> es una
+                  aplicación:</p>
+                <p class="definicion__formula">v : V → DI
+x → v(x) = x</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.5</span> Valoración x-equivalente
+              </h4>
+              <div class="definicion__texto">
+                <p>Una valoración <code>vx x</code> que coincide exactamente
+                  con la valoración <code>v</code>, salvo quizá en el valor
+                  asignado a la variable <code>x ∈ V</code>, se denomina
+                  valoración x-equivalente de <code>v</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.7</span> Valoración en I (extendida a términos)
+              </h4>
+              <div class="definicion__texto">
+                <p>Una valoración <code>ϑ</code> en <code>I</code> es una
+                  aplicación:</p>
+                <p class="definicion__formula">ϑ : T → DI</p>
+                <p>tal que:</p>
+                <p class="definicion__formula">ϑ(t) =
+(1) v(x) si t ∈ V ∧ t ≡ x;
+(2) J(a) si t ∈ C ∧ t ≡ a;
+(3) J(fn i)(ϑ(t1) ... ϑ(tn)) si fn i ∈ F ∧ (t1 ∈ T ∧ ... ∧ tn ∈ T)
+    ∧ t ≡ fn i(t1 ... tn);</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.8</span> Satisfacibilidad
+              </h4>
+              <div class="definicion__texto">
+                <p>Decimos que la valoración <code>ϑ</code> en <code>I</code>
+                  satisface la fbf <code>A</code> si y sólo si, inductivamente
+                  se cumple que:</p>
+                <ol>
+                  <li>Si <code>A ≡ Rn(t1 ... tn)</code> entonces
+                    <code>Rn(ϑ(t1) ... ϑ(tn)) = V</code> donde
+                    <code>Rn = J(Rn)</code> es una relación en
+                    <code>DI</code>.</li>
+                  <li>Si <code>A</code> es de la forma:
+                    <ol type="a">
+                      <li><code>¬B</code> entonces <code>ϑ</code> no satisface
+                        <code>B</code>;</li>
+                      <li><code>(B ∧ C)</code> entonces <code>ϑ</code> satisface
+                        <code>B</code> y <code>ϑ</code> satisface
+                        <code>C</code>;</li>
+                      <li><code>(B ∨ C)</code> entonces <code>ϑ</code> satisface
+                        <code>B</code> o <code>ϑ</code> satisface
+                        <code>C</code>;</li>
+                      <li><code>(B → C)</code> entonces <code>ϑ</code> satisface
+                        <code>¬B</code> o <code>ϑ</code> satisface
+                        <code>C</code>;</li>
+                      <li><code>(B ↔ C)</code> entonces <code>ϑ</code> satisface
+                        <code>B</code> y <code>C</code>, o <code>ϑ</code> no
+                        satisface ni <code>B</code> ni <code>C</code>;</li>
+                    </ol>
+                  </li>
+                  <li>Si <code>A ≡ (∀x)B</code>, para toda valoración
+                    <code>ϑx x</code> x-equivalente de <code>ϑ</code>,
+                    <code>ϑx x</code> satisface <code>B</code>.</li>
+                  <li>Si <code>A ≡ (∃x)B</code>, para alguna valoración
+                    <code>ϑx x</code> x-equivalente de <code>ϑ</code>,
+                    <code>ϑx x</code> satisface <code>B</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.4.11</span> Equivalencia lógica
+              </h4>
+              <div class="definicion__texto">
+                <p>Dos fbf’s <code>A</code> y <code>B</code> de <code>L</code>
+                  son lógicamente equivalentes, denotado <code>A ⇔ B</code>, si
+                  y sólo si para toda interpretación <code>I</code> y para toda
+                  valoración <code>v</code> en <code>I</code>, <code>v</code>
+                  satisface <code>A</code> si y sólo si <code>v</code> satisface
+                  <code>B</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.10</span> Verdad en I
+              </h4>
+              <div class="definicion__texto">
+                <ol>
+                  <li>Una fbf <code>A</code> es verdadera en <code>I</code> si y
+                    sólo si toda valoración <code>ϑ</code> en <code>I</code>
+                    satisface <code>A</code>.</li>
+                  <li>Una fbf <code>A</code> es falsa en <code>I</code> si y sólo
+                    si no existe valoración <code>ϑ</code> en <code>I</code> que
+                    satisfaga <code>A</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.17</span> Fórmula lógicamente válida
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea una fbf <code>A</code> de <code>L</code>.</p>
+                <ol>
+                  <li><code>A</code> es lógicamente válida si y sólo si para
+                    toda interpretación <code>I</code>, <code>A</code> es
+                    verdadera en <code>I</code>. (NOTACIÓN:
+                    <code>⊨ A</code>)</li>
+                  <li><code>A</code> es insatisfacible si y sólo si para toda
+                    interpretación <code>I</code>, <code>A</code> es falsa en
+                    <code>I</code>.</li>
+                  <li><code>A</code> es satisfacible si y sólo si existe una
+                    interpretación <code>I</code> y una valoración en
+                    <code>I</code> tal que <code>v</code> satisface
+                    <code>A</code> en <code>I</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.18</span> Modelo
+              </h4>
+              <div class="definicion__texto">
+                <p>Dada una fbf cerrada <code>A</code> de <code>L</code>,
+                  decimos que una interpretación <code>I</code> es modelo de
+                  <code>A</code> si y sólo si la fbf <code>A</code> es verdadera
+                  en la interpretación <code>I</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.19</span> Modelo de un conjunto
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea <code>Γ</code> un conjunto de fbf’s cerradas de
+                  <code>L</code>, sea <code>I</code> una interpretación de
+                  <code>L</code>. <code>I</code> es modelo de <code>Γ</code> si
+                  y sólo si <code>I</code> es modelo para cada una de las
+                  fórmulas de <code>Γ</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.20</span> Conjunto válido, insatisfacible y satisfacible
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea <code>Γ</code> un conjunto de fbf’s cerradas de
+                  <code>L</code>.</p>
+                <ol>
+                  <li><code>Γ</code> es válido si y sólo si para toda
+                    interpretación <code>I</code> es modelo de
+                    <code>Γ</code>.</li>
+                  <li><code>Γ</code> es insatisfacible si y sólo si no existe
+                    una interpretación <code>I</code> de <code>L</code> que sea
+                    modelo de <code>Γ</code>.</li>
+                  <li><code>Γ</code> es satisfacible si y sólo si existe una
+                    interpretación <code>I</code> de <code>L</code> que es
+                    modelo de <code>Γ</code>.</li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.22</span> Consecuencia lógica (predicados)
+              </h4>
+              <div class="definicion__texto">
+                <p><code>A</code> es consecuencia lógica de <code>Γ</code> si y
+                  sólo si para toda interpretación <code>I</code> de
+                  <code>L</code>, si <code>I</code> es modelo de
+                  <code>Γ</code> entonces <code>I</code> es modelo de
+                  <code>A</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">4.4.26</span> Independencia
+              </h4>
+              <div class="definicion__texto">
+                <p>Sea <code>Γ</code> un conjunto de fbf’s de <code>L</code>.
+                  Una fbf <code>A</code> de <code>L</code> es independiente de
+                  <code>Γ</code> si y sólo si <code>Γ ⊭ A</code>.</p>
+                <p>Sea <code>Γ</code> un conjunto de fbf’s de <code>L</code>.
+                  <code>Γ</code> es independiente si y sólo si para todo
+                  <code>A ∈ Γ</code>, <code>A</code> es independiente de
+                  <code>Γ\{A}</code>.</p>
+              </div>
+            </article>
+          </section>
+
+          <!-- 8 -->
+          <section id="definiciones-kl" class="teoria-seccion">
+            <p class="teoria-kicker">Capítulo 5</p>
+            <h3>Cálculo de predicados: sistema KL</h3>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.1.1</span> Sistema formal KL
+              </h4>
+              <div class="definicion__texto">
+                <p>El sistema formal <code>KL</code> del cálculo de predicados
+                  está caracterizado por:</p>
+                <ol>
+                  <li>Vocabulario:
+                    <ol type="a">
+                      <li>Símbolos comunes a todos los formalismos.
+                        <ol>
+                          <li>Conjunto de símbolos de variable <code>V</code>:
+                            <code>x, y, z, x0, y0, z0, x1, y1, z1, ...,
+                            xn, yn, zn</code>.</li>
+                          <li>Conectivas y cuantificadores:
+                            <code>¬, →, ∀, ∃</code>.</li>
+                          <li>Signos de puntuación:
+                            <code>“(”, “)”, “,”</code>.</li>
+                        </ol>
+                      </li>
+                      <li>Símbolos peculiares de un formalismo.
+                        <ol>
+                          <li>El conjunto de las constantes <code>C</code>:
+                            <code>a, b, c, a0, b0, c0, a1, b1, c1, ...,
+                            an, bn, cn</code>.</li>
+                          <li>El conjunto de los functores n-ádicos
+                            <code>F</code>: <code>fn, gn, hn, f0n, g0n, h0n,
+                            f1n, g1n, h1n, ..., fnn, gnn, hnn</code>.</li>
+                          <li>El conjunto de los relatores n-ádicos
+                            <code>P</code>: <code>Pn, Qn, Rn, P0n, Q0n, R0n,
+                            P1n, Q1n, R1n, ..., Pnn, Qnn, Rnn</code>.</li>
+                        </ol>
+                      </li>
+                    </ol>
+                  </li>
+                  <li>Términos y fórmulas:
+                    <ol type="a">
+                      <li>El conjunto de los términos <code>T</code>.
+                        <ol>
+                          <li>Si <code>t ∈ V ∪ C</code> entonces <code>t</code>
+                            es un término.</li>
+                          <li>Si <code>t1, t2, ..., tn</code> son términos y
+                            <code>fn</code> es un functor n-ádico entonces
+                            <code>fn(t1, t2, ..., tn)</code> es un término.</li>
+                        </ol>
+                      </li>
+                      <li>El conjunto de las fbf’s.
+                        <ol>
+                          <li>Si <code>t1, t2, ..., tn</code> son términos y
+                            <code>Rn</code> es un relator n-ádico de
+                            <code>L</code> entonces
+                            <code>Rn(t1, t2, ..., tn)</code> es una fbf.</li>
+                          <li>Si <code>A</code> y <code>B</code> son fbf’s,
+                            también lo son: <code>(¬A)</code>,
+                            <code>(¬B)</code> y <code>(A → B)</code>.</li>
+                          <li>Si <code>A</code> es una fbf y
+                            <code>x ∈ V</code> entonces <code>(∀x)A</code> es
+                            una fbf.</li>
+                        </ol>
+                      </li>
+                    </ol>
+                  </li>
+                  <li>Definiciones:
+                    <ul>
+                      <li><code>(A ∧ B)</code> es abreviatura de:
+                        <code>(¬(A → (¬B)))</code>.</li>
+                      <li><code>(A ∨ B)</code> es abreviatura de:
+                        <code>((¬A) → B)</code>.</li>
+                      <li><code>(A ↔ B)</code> es abreviatura de:
+                        <code>(¬((A → B)→ (¬(B → A))))</code>.</li>
+                      <li><code>(∃x)A</code> es abreviatura de:
+                        <code>(¬((∀x)(¬A)))</code>.</li>
+                    </ul>
+                  </li>
+                  <li>Axiomas: Cualesquiera que sean las fbf’s <code>A</code>,
+                    <code>B</code> y <code>C</code>, las siguientes fbf’s son
+                    axiomas de <code>KL</code>:
+                    <ol type="a">
+                      <li><code>(K1) (A → (B → A))</code></li>
+                      <li><code>(K2) ((A → (B → C))→ ((A → B)→ (A → C)))</code></li>
+                      <li><code>(K3) (((¬A)→ (¬B))→ (B → A))</code></li>
+                      <li><code>(K4) ((∀x)A → A)</code>, si <code>x</code> no
+                        aparece libre en <code>A</code></li>
+                      <li><code>(K5) ((∀x)A(x) → A(t))</code>, si
+                        <code>t</code> no introduce variables ligadas en
+                        <code>A</code></li>
+                      <li><code>(K6) (∀x)(A → B)→ (A → (∀x)B)</code>, si
+                        <code>x</code> no aparece libre en <code>A</code></li>
+                    </ol>
+                  </li>
+                  <li>Reglas de inferencia: Si <code>A</code> y <code>B</code>
+                    son fbf’s cualesquiera.
+                    <ol type="a">
+                      <li>Modus ponens (MP): de <code>A</code> y
+                        <code>(A → B)</code> se puede inferir como consecuencia
+                        inmediata <code>B</code>.</li>
+                      <li>Generalización (Gen): de <code>A</code> se puede
+                        inferir como consecuencia inmediata
+                        <code>(∀x)A</code>, siendo <code>x</code> cualquier
+                        variable.</li>
+                    </ol>
+                  </li>
+                </ol>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.2.1</span> Tautología en KL
+              </h4>
+              <div class="definicion__texto">
+                <p>Una fbf <code>A</code> de <code>L</code> es una tautología
+                  si proviene por sustitución de una tautología de
+                  <code>L</code>.</p>
+              </div>
+            </article>
+
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.4.1</span> Sustitución
+              </h4>
+              <div class="definicion__texto">
+                <p>Una sustitución <code>σ</code> es una aplicación que asigna
+                  a cada variable <code>x</code> del conjunto de las variables
+                  <code>V</code> de <code>L</code> un término
+                  <code>σ(x)</code> del conjunto de los términos <code>T</code>
+                  de <code>L</code>.</p>
+                <p class="definicion__formula">σ : V → T
+x → σ(x)</p>
+              </div>
+            </article>
+            <article class="definicion">
+              <h4 class="definicion__titulo">
+                <span class="definicion__numero">5.4.2</span> Sustitución de una variable por un término
+              </h4>
+              <div class="definicion__texto">
+                <p>Sean <code>u</code>, <code>x</code> y <code>z</code>
+                  variables, <code>a</code> un símbolo constante,
+                  <code>fn</code> un functor n-ario,
+                  <code>t, t1, ..., tn</code> términos, <code>Pn</code> un
+                  relator n-ario, y <code>A</code> y <code>B</code> fbf’s
+                  cualesquiera.</p>
+                <ol>
+                  <li><code>z{x/t} = t</code> si <code>x ≡ z</code>;
+                    <code>z</code> en otro caso.</li>
+                  <li><code>a{x/t} = a</code>.</li>
+                  <li><code>fn(t1, ..., tn){x/t} = fn(t1{x/t}, ..., tn{x/t})</code>.</li>
+                  <li><code>Pn(t1, ..., tn){x/t} = Pn(t1{x/t}, ..., tn{x/t})</code>.</li>
+                  <li><code>(¬A){x/t} = ¬(A{x/t})</code>.</li>
+                  <li><code>(A ∧ B){x/t} = ((A{x/t}) ∧ (B{x/t}))</code>.</li>
+                  <li><code>(A ∨ B){x/t} = ((A{x/t}) ∨ (B{x/t}))</code>.</li>
+                  <li><code>(A → B){x/t} = ((A{x/t})→ (B{x/t}))</code>.</li>
+                  <li><code>(A ↔ B){x/t} = ((A{x/t})↔ (B{x/t}))</code>.</li>
+                  <li><code>((∀z)A){x/t} =</code>
+                    <ol type="a">
+                      <li><code>(∀z)A</code> si <code>x</code> no está libre
+                        en <code>(∀z)A</code>;</li>
+                      <li><code>(∀z)(A{x/t})</code> si <code>x</code> está
+                        libre en <code>(∀z)A</code> y <code>z</code> no está
+                        libre en <code>t</code>;</li>
+                      <li><code>(∀u)((A{z/u}){x/t})</code> si <code>x</code>
+                        está libre en <code>(∀z)A</code> y <code>z</code> está
+                        libre en <code>t</code> y <code>u</code> no está en
+                        <code>(∀z)A</code>.</li>
+                    </ol>
+                  </li>
+                  <li><code>((∃z)A){x/t} =</code>
+                    <ol type="a">
+                      <li><code>(∃z)A</code> si <code>x</code> no está libre
+                        en <code>(∃z)A</code>;</li>
+                      <li><code>(∃z)(A{x/t})</code> si <code>x</code> está
+                        libre en <code>(∃z)A</code> y <code>z</code> no está
+                        libre en <code>t</code>;</li>
+                      <li><code>(∃u)((A{z/u}){x/t})</code> si <code>x</code>
+                        está libre en <code>(∃z)A</code> y <code>z</code> está
+                        libre en <code>t</code> y <code>u</code> no está en
+                        <code>(∃z)A</code>.</li>
+                    </ol>
+                  </li>
+                </ol>
+              </div>
+            </article>
+
+          </section>
+
+          <div class="teoria-cierre">
+            <p>Las definiciones repetidas en los dos documentos se han
+              consolidado en una sola entrada. Si necesitas el contexto completo,
+              consulta el capítulo correspondiente de los apuntes.</p>
+            <button type="button" class="teoria-volver" data-cerrar-menu>
+              Volver a la aplicación
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MENÚ SECUNDARIO: GUÍA DE TEORÍA ================= -->
+  <div id="menu-teoria" class="menu-teoria" role="dialog" aria-modal="true"
+       aria-labelledby="titulo-menu-teoria" hidden>
+    <div class="menu-teoria__panel">
+      <header class="menu-teoria__cabecera">
+        <div>
+          <p class="menu-teoria__etiqueta">Menú secundario · Guía de teoría</p>
+          <h2 id="titulo-menu-teoria">De la frase a la fórmula</h2>
+          <p class="menu-teoria__intro">
+            Todo lo necesario para formalizar y deducir los ejercicios del
+            curso: conectivas, cuantificadores, precedencia, reglas y ejemplos
+            resueltos, incluido un ejercicio completo.
+          </p>
+        </div>
+        <button type="button" id="btn-cerrar-teoria"
+                class="menu-teoria__cerrar">
+          <span aria-hidden="true">×</span> Cerrar
+        </button>
+      </header>
+
+      <div class="menu-teoria__cuerpo">
+        <nav class="menu-teoria__indice" aria-label="Contenido de la guía">
+          <p class="menu-teoria__indice-titulo">Contenido</p>
+          <a href="#teoria-basico">1. La idea básica</a>
+          <a href="#teoria-conectivas">2. Conectivas</a>
+          <a href="#teoria-diccionario">3. Diccionario de frase a fórmula</a>
+          <a class="menu-teoria__indice-sub" href="#teoria-resumen">· Formas del resumen (PDF)</a>
+          <a href="#teoria-cuantificadores">4. Cuantificadores</a>
+          <a href="#teoria-precedencia">5. Precedencia y paréntesis</a>
+          <a href="#teoria-reglas">6. Reglas de deducción</a>
+          <a href="#teoria-estrategia">7. Estrategia de prueba</a>
+          <a href="#teoria-ejercicio">8. Ejercicio resuelto</a>
+          <a href="#teoria-predicados">9. Ejemplo con predicados</a>
+          <a href="#teoria-errores">10. Errores frecuentes</a>
+        </nav>
+
+        <div class="menu-teoria__contenido">
+          <!-- 1 -->
+          <section id="teoria-basico" class="teoria-seccion">
+            <p class="teoria-kicker">Punto de partida</p>
+            <h3>La idea básica</h3>
+            <p>
+              Un argumento está formado por una o varias <strong>premisas</strong>
+              y una <strong>conclusión</strong>. Formalizar consiste en cambiar
+              las frases por letras y conectivas, conservando exactamente su
+              significado. En la web, la conclusión se marca con
+              <code>=&gt;</code> o se deja como última frase.
+            </p>
+            <div class="teoria-ejemplo">
+              <p><strong>Ejemplo.</strong> «Llueve. Si llueve, me mojo. Por tanto, me mojo.»</p>
+              <pre class="teoria-prueba">p          (llueve)
+p → q      (si llueve, me mojo)
+q          (me mojo)</pre>
+            </div>
+            <p>
+              La letra <code>p</code> representa un enunciado completo, no una
+              palabra. La misma idea debe llevar siempre la misma letra; dos
+              ideas distintas no deben compartir letra.
+            </p>
+            <div class="teoria-aviso">
+              <strong>Regla de oro:</strong> primero se formaliza y se revisa;
+              después se deduce. Una prueba impecable sobre una fórmula mal
+              escrita sigue siendo una respuesta incorrecta.
+            </div>
+          </section>
+
+          <!-- 2 -->
+          <section id="teoria-conectivas" class="teoria-seccion">
+            <p class="teoria-kicker">El alfabeto lógico</p>
+            <h3>Las cinco conectivas</h3>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead>
+                  <tr>
+                    <th>Conectiva</th>
+                    <th>Símbolo</th>
+                    <th>Se lee</th>
+                    <th>Palabras que la introducen</th>
+                    <th>Ejemplo</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Negación</td>
+                    <td><code>¬</code></td>
+                    <td>no</td>
+                    <td>no, no es cierto que, no es verdad que, es falso que,
+                      nunca, jamás, ni… ni…</td>
+                    <td>No llueve: <code>¬p</code></td>
+                  </tr>
+                  <tr>
+                    <td>Conjunción</td>
+                    <td><code>∧</code></td>
+                    <td>y</td>
+                    <td>y, e, pero, aunque, sin embargo, no obstante, además,
+                      mientras que, tanto… como…, no sólo… sino también…</td>
+                    <td>Llueve y hace frío: <code>p∧q</code></td>
+                  </tr>
+                  <tr>
+                    <td>Disyunción</td>
+                    <td><code>∨</code></td>
+                    <td>o</td>
+                    <td>o, u, o bien, ya sea… o…, bien… bien…</td>
+                    <td>Llueve o hace frío: <code>p∨q</code></td>
+                  </tr>
+                  <tr>
+                    <td>Disyunción exhaustiva</td>
+                    <td><code>⊕</code></td>
+                    <td>o… pero no ambos</td>
+                    <td>p o q, pero no los dos a la vez; o… o… (exclusivo)</td>
+                    <td><code>p⊕q</code>, equivalente a <code>(p∨q)∧¬(p∧q)</code></td>
+                  </tr>
+                  <tr>
+                    <td>Condicional</td>
+                    <td><code>→</code></td>
+                    <td>si… entonces…</td>
+                    <td>si, cuando, siempre que, sólo si, a menos que, salvo
+                      que, excepto que, a no ser que</td>
+                    <td>Si llueve, me mojo: <code>p→q</code></td>
+                  </tr>
+                  <tr>
+                    <td>Bicondicional</td>
+                    <td><code>↔</code></td>
+                    <td>si y sólo si</td>
+                    <td>si y sólo si, equivale a, es equivalente a, sii</td>
+                    <td>Llueve si y sólo si hay nubes: <code>p↔q</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>Tabla de verdad</h4>
+            <p>
+              Una conectiva se define por todos los casos posibles de sus
+              componentes. <strong>V</strong> significa verdadero y
+              <strong>F</strong> falso.
+            </p>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla teoria-tabla--verdad">
+                <thead>
+                  <tr>
+                    <th>p</th><th>q</th><th>¬p</th><th>p∧q</th>
+                    <th>p∨q</th><th>p⊕q</th><th>p→q</th><th>p↔q</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>V</td><td>V</td><td>F</td><td>V</td><td>V</td><td>F</td><td>V</td><td>V</td></tr>
+                  <tr><td>V</td><td>F</td><td>F</td><td>F</td><td>V</td><td>V</td><td>F</td><td>F</td></tr>
+                  <tr><td>F</td><td>V</td><td>V</td><td>F</td><td>V</td><td>V</td><td>V</td><td>F</td></tr>
+                  <tr><td>F</td><td>F</td><td>V</td><td>F</td><td>F</td><td>F</td><td>V</td><td>V</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="teoria-nota">
+              El condicional sólo es falso cuando el antecedente es verdadero y
+              el consecuente falso. Por eso «si 2+2=5, llueve» es verdadero en
+              lógica: no afirma que llueva, sólo describe la relación.
+            </p>
+            <div class="teoria-aviso">
+              <strong>Disyunción exhaustiva.</strong> El resumen usa
+              <code>p⊕q</code> para «p o q, pero no los dos a la vez». La app no
+              tiene el símbolo <code>⊕</code>: si necesitas escribirla, usa
+              <code>(p∨q)∧¬(p∧q)</code>.
+            </div>
+            <p class="teoria-nota">
+              <strong>Otras notaciones del resumen:</strong> la barra de Sheffer
+              <code>p|q</code> significa <code>¬(p∧q)</code> («p no es
+              compatible con q») y la barra de Pierce <code>p↓q</code> significa
+              <code>¬(p∨q)</code> («ni p ni q»).
+            </p>
+          </section>
+
+          <!-- 3 -->
+          <section id="teoria-diccionario" class="teoria-seccion">
+            <p class="teoria-kicker">Traducción</p>
+            <h3>Diccionario de frase a fórmula</h3>
+
+            <h4 id="teoria-resumen" class="teoria-resumen-ancla">Las formas del resumen, con p y q</h4>
+            <p>
+              Este es el listado completo de <em>resumen_logica_bueno.pdf</em>.
+              Cada expresión va acompañada de su fórmula para que no haya dudas
+              con la dirección de las flechas.
+            </p>
+            <div class="teoria-resumen-conectivas">
+              <article class="teoria-resumen-card teoria-resumen-card--negacion">
+                <header class="teoria-resumen-card__cabecera">
+                  <h5>Negación</h5>
+                  <code>¬p</code>
+                </header>
+                <p class="teoria-resumen-card__nota">Se niega p.</p>
+                <ul>
+                  <li><span>No p.</span><code>¬p</code></li>
+                  <li><span>No es cierto que p.</span><code>¬p</code></li>
+                  <li><span>No es caso que p.</span><code>¬p</code></li>
+                  <li><span>Es falso que p.</span><code>¬p</code></li>
+                  <li><span>Excepto p.</span><code>¬p</code></li>
+                  <li><span>Caso contrario que p.</span><code>¬p</code></li>
+                  <li><span>Es absurdo que p.</span><code>¬p</code></li>
+                  <li><span>Es inadmisible que p.</span><code>¬p</code></li>
+                </ul>
+              </article>
+
+              <article class="teoria-resumen-card teoria-resumen-card--conjuncion">
+                <header class="teoria-resumen-card__cabecera">
+                  <h5>Conjunción</h5>
+                  <code>p∧q</code>
+                </header>
+                <p class="teoria-resumen-card__nota">p y q suceden a la vez.</p>
+                <ul>
+                  <li><span>p y q.</span><code>p∧q</code></li>
+                  <li><span>p pero q.</span><code>p∧q</code></li>
+                  <li><span>p aunque q.</span><code>p∧q</code></li>
+                  <li><span>p no obstante q.</span><code>p∧q</code></li>
+                  <li><span>p sin embargo q.</span><code>p∧q</code></li>
+                  <li><span>p con q.</span><code>p∧q</code></li>
+                  <li><span>p también q.</span><code>p∧q</code></li>
+                  <li><span>p incluido q.</span><code>p∧q</code></li>
+                  <li><span>p tanto como q.</span><code>p∧q</code></li>
+                </ul>
+              </article>
+
+              <article class="teoria-resumen-card teoria-resumen-card--disyuncion">
+                <header class="teoria-resumen-card__cabecera">
+                  <h5>Disyunción</h5>
+                  <code>p∨q</code>
+                </header>
+                <p class="teoria-resumen-card__nota">Cualquiera que se cumpla nos vale.</p>
+                <ul>
+                  <li><span>p o q.</span><code>p∨q</code></li>
+                  <li><span>Al menos p o q.</span><code>p∨q</code></li>
+                  <li><span>p o también q.</span><code>p∨q</code></li>
+                  <li><span>p excepto que q.</span><code>p∨q</code></li>
+                  <li><span>p o incluso q.</span><code>p∨q</code></li>
+                  <li><span>p a menos que q.</span><code>p∨q</code></li>
+                  <li><span>p a no ser que q.</span><code>p∨q</code></li>
+                  <li><span>p salvo que q.</span><code>p∨q</code></li>
+                  <li><span>p y/o q.</span><code>p∨q</code></li>
+                  <li><span>p alternativamente de q.</span><code>p∨q</code></li>
+                  <li><span>p o en todo caso q.</span><code>p∨q</code></li>
+                </ul>
+              </article>
+
+              <article class="teoria-resumen-card teoria-resumen-card--condicional">
+                <header class="teoria-resumen-card__cabecera">
+                  <h5>Condicional</h5>
+                  <code>p→q</code>
+                </header>
+                <p class="teoria-resumen-card__nota">p primero y luego q.</p>
+                <ul>
+                  <li><span>Si p, entonces q.</span><code>p→q</code></li>
+                  <li><span>Si p, q.</span><code>p→q</code></li>
+                  <li><span>p implica q.</span><code>p→q</code></li>
+                  <li><span>p sólo si q.</span><code>p→q</code></li>
+                  <li><span>Sólo si q, p.</span><code>p→q</code></li>
+                  <li><span>p es suficiente para q.</span><code>p→q</code></li>
+                  <li><span>q si p.</span><code>p→q</code></li>
+                  <li><span>q es necesario para p.</span><code>p→q</code></li>
+                  <li><span>q cuando quiera que p.</span><code>p→q</code></li>
+                  <li><span>q siempre que p.</span><code>p→q</code></li>
+                  <li><span>No p a menos que q.</span><code>p→q</code></li>
+                  <li><span>p es porque q.</span><code>q→p</code></li>
+                  <li><span>Cuando p, q.</span><code>p→q</code></li>
+                  <li><span>p por lo tanto q.</span><code>p→q</code></li>
+                  <li><span>q por p.</span><code>p→q</code></li>
+                </ul>
+              </article>
+
+              <article class="teoria-resumen-card teoria-resumen-card--bicondicional teoria-resumen-card--ancha">
+                <header class="teoria-resumen-card__cabecera">
+                  <h5>Bicondicional</h5>
+                  <code>p↔q</code>
+                </header>
+                <p class="teoria-resumen-card__nota">
+                  Si p entonces q y si q entonces p.
+                </p>
+                <ul class="teoria-resumen-card__lista-doble">
+                  <li><span>p si y sólo si q.</span><code>p↔q</code></li>
+                  <li><span>p es necesario y suficiente para q.</span><code>p↔q</code></li>
+                </ul>
+              </article>
+            </div>
+
+            <div class="teoria-aviso teoria-aviso--naranja">
+              <strong>Dirección de la flecha.</strong> «p es porque q» se ha
+              marcado como <code>q→p</code>: la causa es q y la consecuencia es
+              p. El resto de formas condicionales del resumen conservan
+              <code>p→q</code>. Si cambias el orden de p y q, cambia también la
+              flecha.
+            </div>
+
+            <h4>Negación, conjunción y disyunción: fórmulas habituales</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead>
+                  <tr><th>Expresión</th><th>Fórmula</th><th>Comentario</th></tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>No A / no es cierto que A / es falso que A</td>
+                    <td><code>¬A</code></td>
+                    <td>La negación afecta a todo lo que hay dentro de su paréntesis.</td>
+                  </tr>
+                  <tr>
+                    <td>Ni A ni B</td>
+                    <td><code>¬A∧¬B</code></td>
+                    <td>Equivale a <code>¬(A∨B)</code>.</td>
+                  </tr>
+                  <tr>
+                    <td>A pero B / A aunque B / A sin embargo B</td>
+                    <td><code>A∧B</code></td>
+                    <td>El matiz de contraste no cambia la conjunción lógica.</td>
+                  </tr>
+                  <tr>
+                    <td>No A sino B</td>
+                    <td><code>¬A∧B</code></td>
+                    <td>Se niega una alternativa y se afirma la otra.</td>
+                  </tr>
+                  <tr>
+                    <td>A o B / A o bien B / A u B</td>
+                    <td><code>A∨B</code></td>
+                    <td>La disyunción del curso es incluyente: puede darse A, B o ambas.</td>
+                  </tr>
+                  <tr>
+                    <td>O A o B, pero no ambos</td>
+                    <td><code>(A∨B)∧¬(A∧B)</code></td>
+                    <td>Disyunción exclusiva; hay que escribirla explícitamente.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>El condicional: la dirección importa</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead>
+                  <tr><th>Expresión</th><th>Fórmula</th><th>Por qué</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Si A, B / Si A entonces B</td><td><code>A→B</code></td><td>A es la condición suficiente.</td></tr>
+                  <tr><td>Cuando A, B</td><td><code>A→B</code></td><td>«Cuando» funciona como «si».</td></tr>
+                  <tr><td>Siempre que A, B</td><td><code>A→B</code></td><td>A es la condición que desencadena B.</td></tr>
+                  <tr><td>A si B</td><td><code>B→A</code></td><td>B es la condición; A es lo que se sigue.</td></tr>
+                  <tr><td>A cuando B</td><td><code>B→A</code></td><td>B es la condición, aunque aparezca después.</td></tr>
+                  <tr><td>A sólo si B</td><td><code>A→B</code></td><td>B es condición necesaria de A.</td></tr>
+                  <tr><td>Sólo si A, B</td><td><code>B→A</code></td><td>La condición necesaria va delante.</td></tr>
+                  <tr><td>A es necesario para B</td><td><code>B→A</code></td><td>Si se da B, necesariamente se da A.</td></tr>
+                  <tr><td>A es suficiente para B</td><td><code>A→B</code></td><td>Basta con A para obtener B.</td></tr>
+                  <tr><td>Para que A es necesario B</td><td><code>A→B</code></td><td>B es requisito de A.</td></tr>
+                  <tr><td>A a menos que B</td><td><code>¬A→B</code></td><td>También equivale a <code>¬B→A</code>.</td></tr>
+                  <tr><td>A salvo que B / excepto que B / a no ser que B</td><td><code>¬A→B</code></td><td>B es la excepción que evita que A sea el caso.</td></tr>
+                  <tr><td>No A si B</td><td><code>B→¬A</code></td><td>El «no» afecta sólo a A.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="teoria-aviso teoria-aviso--naranja">
+              <strong>No confundas:</strong> «A si B» es <code>B→A</code>,
+              mientras que «A sólo si B» es <code>A→B</code>. Cambiar «si» por
+              «sólo si» invierte la flecha.
+            </div>
+
+            <h4>Bicondicional</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead>
+                  <tr><th>Expresión</th><th>Fórmula</th><th>Comentario</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>A si y sólo si B</td><td><code>A↔B</code></td><td>Las dos direcciones: <code>A→B</code> y <code>B→A</code>.</td></tr>
+                  <tr><td>A equivale a B / A es equivalente a B</td><td><code>A↔B</code></td><td>Mismo valor de verdad en todos los casos.</td></tr>
+                  <tr><td>A sii B</td><td><code>A↔B</code></td><td>Abreviatura informal de «si y sólo si».</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- 4 -->
+          <section id="teoria-cuantificadores" class="teoria-seccion">
+            <p class="teoria-kicker">Cálculo de predicados</p>
+            <h3>Cuantificadores</h3>
+            <p>
+              En predicados se distingue entre <strong>términos</strong>
+              (nombres, variables, constantes) y <strong>predicados</strong>
+              (propiedades o relaciones). El curso usa
+              <code>(Λx)</code> para «para todo x» y <code>(Vx)</code> para
+              «existe algún x».
+            </p>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead>
+                  <tr><th>Español</th><th>Fórmula</th><th>Lectura</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>Todos los A son B</td><td><code>(Λx)(A(x)→B(x))</code></td><td>Si algo es A, entonces es B.</td></tr>
+                  <tr><td>Los A son B / Cada A es B</td><td><code>(Λx)(A(x)→B(x))</code></td><td>Generalización universal.</td></tr>
+                  <tr><td>Ningún A es B</td><td><code>(Λx)(A(x)→¬B(x))</code></td><td>No hay ningún A que sea B.</td></tr>
+                  <tr><td>Algún A es B / Algunos A son B</td><td><code>(Vx)(A(x)∧B(x))</code></td><td>Existe al menos un A que también es B.</td></tr>
+                  <tr><td>Existe un A que B / Hay un A que B</td><td><code>(Vx)(A(x)∧B(x))</code></td><td>No basta con que exista un B: tiene que ser A.</td></tr>
+                  <tr><td>Sólo los A son B</td><td><code>(Λx)(B(x)→A(x))</code></td><td>Todo lo que es B pertenece a A.</td></tr>
+                  <tr><td>No todos los A son B</td><td><code>¬(Λx)(A(x)→B(x))</code></td><td>Es distinto de «ningún A es B».</td></tr>
+                  <tr><td>No hay ningún A que B</td><td><code>¬(Vx)(A(x)∧B(x))</code></td><td>No existe un A que sea B.</td></tr>
+                  <tr><td>Todos los A, excepto los B, son C</td><td><code>(Λx)((A(x)∧¬B(x))→C(x))</code></td><td>Se excluye a los B del conjunto A.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="teoria-ejemplo">
+              <p><strong>Ejemplo.</strong> «Los loros son de clima tropical.»</p>
+              <pre class="teoria-prueba">L(x): x es loro
+T(x): x es de clima tropical
+(Λx)(L(x) → T(x))</pre>
+            </div>
+            <div class="teoria-aviso teoria-aviso--naranja">
+              <strong>Equivalencias del resumen.</strong>
+              <br>
+              «No todos» = «Algunos no»:
+              <code>¬(Λx)P(x) ≡ (Vx)¬P(x)</code>.
+              <br>
+              «Ninguno» = «No algunos» = «Todos no»:
+              <code>¬(Vx)P(x) ≡ (Λx)¬P(x)</code>.
+            </div>
+            <p class="teoria-nota">
+              <strong>Truco del resumen:</strong> los generalizadores («todos»)
+              suelen llevar implicación, y los particularizadores («algunos»)
+              suelen llevar conjunción.
+            </p>
+          </section>
+
+          <!-- 5 -->
+          <section id="teoria-precedencia" class="teoria-seccion">
+            <p class="teoria-kicker">Cómo se lee una fórmula</p>
+            <h3>Precedencia y paréntesis</h3>
+            <p>El orden del curso es:</p>
+            <ol class="teoria-lista-numerada">
+              <li><code>¬</code> liga más fuerte.</li>
+              <li>Después, <code>∧</code> y <code>∨</code>, al mismo nivel.</li>
+              <li>Después, <code>→</code> y <code>↔</code>, al mismo nivel.</li>
+            </ol>
+            <p>
+              Cuando se mezclan conectivas del mismo nivel hay que usar
+              paréntesis o corchetes. La app rechaza las fórmulas ambiguas para
+              que no se interpreten de dos maneras distintas.
+            </p>
+            <div class="teoria-columnas">
+              <div>
+                <h4>Correcto</h4>
+                <pre class="teoria-prueba">p → (q ∧ r)
+(p ∧ q) ∨ r
+p → (q → r)
+[p ∧ q] → r</pre>
+              </div>
+              <div>
+                <h4>Ambiguo: escribe paréntesis</h4>
+                <pre class="teoria-prueba">p ∧ q ∨ r
+p → q → r
+p ↔ q → r</pre>
+              </div>
+            </div>
+            <div class="teoria-aviso">
+              <strong>Negación y alcance.</strong> <code>¬(p∧q)</code> significa
+              «no se dan p y q a la vez»; <code>¬p∧q</code> significa «no se da
+              p, pero sí q». No son lo mismo.
+            </div>
+          </section>
+
+          <!-- 6 -->
+          <section id="teoria-reglas" class="teoria-seccion">
+            <p class="teoria-kicker">Deducción natural</p>
+            <h3>Reglas de deducción</h3>
+            <p>
+              Cada línea de una deducción debe justificarse con una regla y las
+              líneas anteriores que se usan. Estas son las reglas que emplea la
+              aplicación, con los nombres del curso.
+            </p>
+
+            <h4>Reglas básicas</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead><tr><th>Regla</th><th>De</th><th>Se sigue</th><th>Nombre</th></tr></thead>
+                <tbody>
+                  <tr><td><code>MP</code></td><td><code>A→B</code> y <code>A</code></td><td><code>B</code></td><td>Modus ponens</td></tr>
+                  <tr><td><code>MT</code></td><td><code>A→B</code> y <code>¬B</code></td><td><code>¬A</code></td><td>Modus tollens</td></tr>
+                  <tr><td><code>SH</code></td><td><code>A→B</code> y <code>B→C</code></td><td><code>A→C</code></td><td>Silogismo hipotético</td></tr>
+                  <tr><td><code>Simp1</code></td><td><code>A∧B</code></td><td><code>A</code></td><td>Simplificación</td></tr>
+                  <tr><td><code>Simp2</code></td><td><code>A∧B</code></td><td><code>B</code></td><td>Simplificación</td></tr>
+                  <tr><td><code>IC</code></td><td><code>A</code> y <code>B</code></td><td><code>A∧B</code></td><td>Introducción del conjuntor</td></tr>
+                  <tr><td><code>Ad</code></td><td><code>A</code></td><td><code>A∨B</code></td><td>Adición</td></tr>
+                  <tr><td><code>SD</code></td><td><code>A∨B</code> y <code>¬A</code></td><td><code>B</code></td><td>Silogismo disyuntivo</td></tr>
+                  <tr><td><code>Dil</code></td><td><code>A∨B</code>, <code>A→C</code>, <code>B→D</code></td><td><code>C∨D</code></td><td>Dilema / análisis de casos</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>Equivalencias y pasos abreviados</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead><tr><th>Regla</th><th>Equivalencia</th><th>Uso típico</th></tr></thead>
+                <tbody>
+                  <tr><td><code>DN</code></td><td><code>¬¬A ↔ A</code></td><td>Quitar una doble negación.</td></tr>
+                  <tr><td><code>IDN</code></td><td><code>A ↔ ¬¬A</code></td><td>Introducir una doble negación.</td></tr>
+                  <tr><td><code>DM1</code></td><td><code>¬(A∧B) ↔ ¬A∨¬B</code></td><td>De Morgan para la conjunción.</td></tr>
+                  <tr><td><code>DM2</code></td><td><code>¬(A∨B) ↔ ¬A∧¬B</code></td><td>De Morgan para la disyunción.</td></tr>
+                  <tr><td><code>Cp</code></td><td><code>A→B ↔ ¬B→¬A</code></td><td>Contraposición.</td></tr>
+                  <tr><td><code>DI1</code></td><td><code>A→B ↔ ¬(A∧¬B)</code></td><td>Definición del implicador.</td></tr>
+                  <tr><td><code>DI2</code></td><td><code>A→B ↔ ¬A∨B</code></td><td>Convertir una implicación en disyunción.</td></tr>
+                  <tr><td><code>DD</code></td><td><code>A∨(B∧C) ↔ (A∨B)∧(A∨C)</code></td><td>Distributividad.</td></tr>
+                  <tr><td><code>IDD</code></td><td><code>A∨A ↔ A</code> y <code>A∧A ↔ A</code></td><td>Idempotencia.</td></tr>
+                  <tr><td><code>EI1</code></td><td><code>A↔B ⊢ A→B</code></td><td>Eliminar el coimplicador.</td></tr>
+                  <tr><td><code>EI2</code></td><td><code>A↔B ⊢ B→A</code></td><td>Eliminar el coimplicador.</td></tr>
+                  <tr><td><code>DC</code></td><td><code>A∧B ⊢ A∨B</code></td><td>Paso de conjunción a disyunción.</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4>Supuestos y predicados</h4>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla">
+                <thead><tr><th>Regla</th><th>Qué permite</th><th>Ejemplo</th></tr></thead>
+                <tbody>
+                  <tr><td><code>TD</code></td><td>Si al suponer A se llega a B, concluir <code>A→B</code>.</td><td>Supón <code>p</code>, deriva <code>q</code>, concluye <code>p→q</code>.</td></tr>
+                  <tr><td><code>Abs</code></td><td>Si un supuesto lleva a contradicción, cerrarlo y concluir la negación (o la meta, según el caso).</td><td>Supón <code>¬p</code> y llega a <code>p∧¬p</code>; concluye <code>p</code>.</td></tr>
+                  <tr><td><code>EG</code></td><td>Del universal se sigue un caso concreto.</td><td><code>(Λx)P(x) ⊢ P(a)</code></td></tr>
+                  <tr><td><code>IG</code></td><td>Si <code>P(a)</code> vale para un <code>a</code> arbitrario, generalizar.</td><td><code>P(a) ⊢ (Λx)P(x)</code></td></tr>
+                  <tr><td><code>EP</code></td><td>Del existencial se sigue un caso nuevo.</td><td><code>(Vx)P(x) ⊢ P(a)</code>, con <code>a</code> nueva.</td></tr>
+                  <tr><td><code>IP</code></td><td>De un caso concreto se sigue el existencial.</td><td><code>P(a) ⊢ (Vx)P(x)</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="teoria-nota">
+              En las pruebas con supuestos, el marcador de apertura y cierre
+              indica qué líneas dependen de cada supuesto. La app muestra esas
+              marcas y explica cada paso debajo de la prueba.
+            </p>
+          </section>
+
+          <!-- 7 -->
+          <section id="teoria-estrategia" class="teoria-seccion">
+            <p class="teoria-kicker">Método de trabajo</p>
+            <h3>Estrategia de prueba</h3>
+            <ol class="teoria-lista-numerada">
+              <li><strong>Formaliza y revisa.</strong> Comprueba que cada premisa y la conclusión dicen lo mismo que el enunciado.</li>
+              <li><strong>Mira la conectiva principal de la conclusión.</strong> Eso sugiere la última regla que vas a usar.</li>
+              <li><strong>Si la conclusión es un condicional</strong> <code>A→B</code>, supón <code>A</code>, deriva <code>B</code> y aplica <code>TD</code>.</li>
+              <li><strong>Si la conclusión es una conjunción</strong> <code>A∧B</code>, intenta obtener <code>A</code> y <code>B</code> por separado y usa <code>IC</code>.</li>
+              <li><strong>Si la conclusión es una disyunción</strong>, prueba <code>Ad</code> o un análisis de casos con <code>Dil</code>.</li>
+              <li><strong>Si hay una premisa disyuntiva</strong> <code>A∨B</code>, mira si puedes eliminar uno de los dos lados con <code>SD</code> o abrir dos ramas con <code>Dil</code>.</li>
+              <li><strong>Si hay una premisa conjuntiva</strong>, sepárala con <code>Simp1</code> o <code>Simp2</code>.</li>
+              <li><strong>Si te atascas</strong>, busca una contradicción y prueba <code>Abs</code>, o trabaja hacia atrás desde la conclusión.</li>
+            </ol>
+            <div class="teoria-aviso teoria-aviso--verde">
+              <strong>No hay una única prueba correcta.</strong> Si una ruta no
+              llega a la meta, vuelve a la formalización y prueba otra
+              estrategia. La app muestra una prueba válida, no la única.
+            </div>
+          </section>
+
+          <!-- 8 -->
+          <section id="teoria-ejercicio" class="teoria-seccion">
+            <p class="teoria-kicker">Ejercicio resuelto</p>
+            <h3>«Estudias y apruebas o, sales y te diviertes»</h3>
+            <div class="teoria-ejemplo">
+              <p><strong>Enunciado.</strong></p>
+              <pre class="teoria-prueba">Estudias y apruebas o, sales y te diviertes.
+Estudias sólo si no estudias.
+Por tanto, te diviertes.</pre>
+              <p><strong>Formalización.</strong> Sean:</p>
+              <pre class="teoria-prueba">p = estudias
+q = apruebas
+r = sales
+s = te diviertes
+
+1. (p∧q) ∨ (r∧s)     Premisa
+2. p → ¬p            Premisa
+meta: s</pre>
+            </div>
+            <p>
+              La primera premisa es una disyunción de dos conjunciones. La
+              segunda dice que estudiar implica no estudiar, así que <code>p</code>
+              no puede ser verdadero. Hay que eliminar la primera posibilidad y
+              quedarse con la segunda.
+            </p>
+            <div class="teoria-tabla-envoltorio">
+              <table class="teoria-tabla teoria-tabla--prueba">
+                <thead><tr><th>Línea</th><th>Fórmula</th><th>Justificación</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td><code>(p∧q)∨(r∧s)</code></td><td>Premisa</td></tr>
+                  <tr><td>2</td><td><code>p→¬p</code></td><td>Premisa</td></tr>
+                  <tr><td>3</td><td><code>(p∨(r∧s))∧(q∨(r∧s))</code></td><td><code>DD 1</code>: distribuir la disyunción sobre la conjunción.</td></tr>
+                  <tr><td>4</td><td><code>p∨(r∧s)</code></td><td><code>Simp1 3</code></td></tr>
+                  <tr><td>5</td><td><code>¬p∨¬p</code></td><td><code>DI2 2</code>: <code>p→¬p</code> equivale a <code>¬p∨¬p</code>.</td></tr>
+                  <tr><td>6</td><td><code>¬p</code></td><td><code>IDD 5</code>: una disyunción repetida se reduce a uno de sus términos.</td></tr>
+                  <tr><td>7</td><td><code>r∧s</code></td><td><code>SD 4,6</code>: de <code>p∨(r∧s)</code> y <code>¬p</code> se sigue <code>r∧s</code>.</td></tr>
+                  <tr><td>8</td><td><code>s</code></td><td><code>Simp2 7</code>.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="teoria-nota">
+              La prueba también se puede organizar con un supuesto y una
+              reducción al absurdo, pero la ruta directa anterior es la que
+              aparece en la aplicación y utiliza las reglas <code>DD</code>,
+              <code>DI2</code> e <code>IDD</code> del curso.
+            </p>
+          </section>
+
+          <!-- 9 -->
+          <section id="teoria-predicados" class="teoria-seccion">
+            <p class="teoria-kicker">Ejercicio resuelto</p>
+            <h3>«Los loros son de clima tropical…»</h3>
+            <div class="teoria-ejemplo">
+              <p><strong>Enunciado.</strong></p>
+              <pre class="teoria-prueba">Los loros son de clima tropical.
+Todos los animales, excepto los loros, no hablan.
+Los animales no son aburridos a menos que no sean de clima tropical.
+Por tanto, los animales que hablan no son aburridos.</pre>
+              <p><strong>Vocabulario.</strong> Dominio: animales.</p>
+              <pre class="teoria-prueba">L(x): x es loro
+T(x): x es de clima tropical
+H(x): x habla
+A(x): x es aburrido
+
+1. (Λx)(L(x)→T(x))
+2. (Λx)(¬L(x)→¬H(x))
+3. (Λx)(T(x)→¬A(x))
+meta: (Λx)(H(x)→¬A(x))</pre>
+            </div>
+            <p><strong>Idea de la prueba.</strong> Se toma un animal arbitrario
+              <code>a</code> y se supone que habla, <code>H(a)</code>. Por
+              contraposición de la premisa 2 se obtiene
+              <code>H(a)→L(a)</code>; con <code>MP</code> se llega a
+              <code>L(a)</code>, y con la premisa 1 a <code>T(a)</code>. La
+              premisa 3 da <code>¬A(a)</code>. Así se ha demostrado
+              <code>H(a)→¬A(a)</code> para un <code>a</code> arbitrario y, por
+              generalización universal, se concluye la meta.
+            </p>
+            <div class="teoria-aviso teoria-aviso--verde">
+              <strong>Clave:</strong> «no aburridos a menos que no sean
+              tropicales» se formaliza como <code>T(x)→¬A(x)</code>. La
+              excepción «a menos que» invierte la condición.
+            </div>
+          </section>
+
+          <!-- 10 -->
+          <section id="teoria-errores" class="teoria-seccion">
+            <p class="teoria-kicker">Antes de entregar</p>
+            <h3>Errores frecuentes y lista de comprobación</h3>
+            <div class="teoria-columnas">
+              <div>
+                <h4>Errores que hay que evitar</h4>
+                <ul class="teoria-lista">
+                  <li>Confundir «A si B» (<code>B→A</code>) con «A sólo si B» (<code>A→B</code>).</li>
+                  <li>Leer «a menos que» como una conjunción; es un condicional con negación.</li>
+                  <li>Escribir <code>p∧q∨r</code> sin paréntesis.</li>
+                  <li>Confundir <code>¬(p∧q)</code> con <code>¬p∧q</code>.</li>
+                  <li>Usar «no todos» como sinónimo de «ninguno».</li>
+                  <li>Cambiar de letra para la misma idea o usar la misma letra para ideas distintas.</li>
+                  <li>Olvidar que «pero», «aunque» y «sin embargo» son conjunciones lógicas.</li>
+                  <li>Tratar la disyunción como exclusiva: en el curso <code>∨</code> incluye el caso en que se dan ambas.</li>
+                  <li>Deducir sin revisar la formalización.</li>
+                </ul>
+              </div>
+              <div>
+                <h4>Lista de comprobación</h4>
+                <ul class="teoria-lista teoria-lista--check">
+                  <li>¿Están todas las premisas?</li>
+                  <li>¿La conclusión está bien identificada?</li>
+                  <li>¿Cada idea tiene siempre la misma letra?</li>
+                  <li>¿La dirección de cada condicional es correcta?</li>
+                  <li>¿Los paréntesis eliminan toda ambigüedad?</li>
+                  <li>¿He distinguido «todos», «alguno» y «ninguno»?</li>
+                  <li>¿La prueba usa reglas y líneas anteriores válidas?</li>
+                  <li>¿He revisado la explicación de cada paso?</li>
+                </ul>
+              </div>
+            </div>
+            <div class="teoria-cierre">
+              <p>
+                Si la app no encuentra una deducción, puede ser que el
+                argumento no sea válido o que la formalización necesite un
+                ajuste. Revisa primero las fórmulas y después la estrategia.
+              </p>
+              <button type="button" class="teoria-volver" data-cerrar-menu>
+                Volver a la aplicación
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MENÚ SECUNDARIO: MEMORIA DE FRASES ================= -->
+  <div id="menu-memoria" class="menu-teoria menu-memoria"
+       role="dialog" aria-modal="true"
+       aria-labelledby="titulo-menu-memoria" hidden>
+    <div class="menu-teoria__panel">
+      <header class="menu-teoria__cabecera">
+        <div>
+          <p class="menu-teoria__etiqueta">Tu historial local</p>
+          <h2 id="titulo-menu-memoria">Memoria de frases</h2>
+          <p class="menu-teoria__intro">
+            Aquí están los ejercicios que has deducido. Pulsa en uno para ver
+            sus frases, la formalización, el vocabulario y la deducción
+            completa.
+          </p>
+        </div>
+        <button type="button" id="btn-cerrar-memoria"
+                class="menu-teoria__cerrar">
+          <span aria-hidden="true">×</span> Cerrar
+        </button>
+      </header>
+
+      <div class="menu-teoria__cuerpo memoria__cuerpo">
+        <aside class="memoria__lista" aria-label="Ejercicios guardados">
+          <div class="memoria__lista-cabecera">
+            <p id="memoria-cuenta" class="memoria__cuenta">Cargando…</p>
+            <button type="button" id="btn-recargar-memoria"
+                    class="memoria__recargar">Actualizar</button>
+          </div>
+          <div id="memoria-items" class="memoria__items">
+            <p class="memoria__vacio">Cargando la memoria local…</p>
+          </div>
+        </aside>
+
+        <div id="memoria-detalle"
+             class="teoria-seccion memoria__detalle" aria-live="polite">
+          <p class="memoria__vacio">
+            Elige un ejercicio de la lista para ver su formalización y su
+            deducción.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MENÚ SECUNDARIO: TABLAS DE VERDAD ================= -->
+  <div id="menu-verdad" class="menu-teoria menu-verdad"
+       role="dialog" aria-modal="true"
+       aria-labelledby="titulo-menu-verdad" hidden>
+    <div class="menu-teoria__panel">
+      <header class="menu-teoria__cabecera menu-verdad__cabecera">
+        <div>
+          <p class="menu-teoria__etiqueta">Herramienta · Semántica</p>
+          <h2 id="titulo-menu-verdad">Tablas de verdad</h2>
+          <p class="menu-teoria__intro">
+            Escribe una fórmula de enunciados y consulta todos sus valores.
+            La tabla indica si es una tautología, una contradicción o una
+            fórmula contingente.
+          </p>
+        </div>
+        <button type="button" id="btn-cerrar-verdad"
+                class="menu-teoria__cerrar">
+          <span aria-hidden="true">×</span> Cerrar
+        </button>
+      </header>
+
+      <div class="menu-verdad__cuerpo">
+        <section class="verdad__panel verdad__entrada"
+                 aria-labelledby="verdad-titulo-entrada">
+          <h3 id="verdad-titulo-entrada">Escribe una fórmula</h3>
+          <form id="verdad-form" novalidate>
+            <label class="verdad__etiqueta" for="verdad-formula">Fórmula</label>
+            <textarea id="verdad-formula" class="verdad__campo" rows="3"
+                      spellcheck="false" autocapitalize="off"
+                      placeholder="(p∧q)→r"></textarea>
+
+            <p class="verdad__ejemplos-titulo">Ejemplos rápidos</p>
+            <div class="verdad__ejemplos" aria-label="Fórmulas de ejemplo">
+              <button type="button" class="verdad__chip"
+                      data-formula="p→q">p→q</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="p∧q">p∧q</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="p∨q">p∨q</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="¬(p∧q)">¬(p∧q)</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="(p∨q)→r">(p∨q)→r</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="p↔q">p↔q</button>
+            </div>
+
+            <div class="verdad__acciones">
+              <button type="submit" id="btn-calcular-verdad"
+                      class="verdad__calcular">
+                <span class="verdad__calcular-texto">Generar tabla</span>
+                <span class="verdad__calcular-cargando" hidden>Calculando…</span>
+              </button>
+              <button type="button" id="btn-verdad-conclusion"
+                      class="verdad__secundario">
+                Usar la conclusión actual
+              </button>
+            </div>
+            <p id="verdad-aviso" class="verdad__aviso" role="alert" hidden></p>
+          </form>
+
+          <details class="verdad__ayuda">
+            <summary>Símbolos admitidos</summary>
+            <p>
+              Notación del curso: <code>¬</code>, <code>∧</code>,
+              <code>∨</code>, <code>→</code> y <code>↔</code>. También puedes
+              escribir <code>!</code>, <code>&amp;</code>, <code>|</code>,
+              <code>-&gt;</code> y <code>&lt;-&gt;</code>.
+            </p>
+          </details>
+        </section>
+
+        <section id="verdad-resultado" class="verdad__panel verdad__resultado"
+                 aria-live="polite" aria-labelledby="verdad-titulo-resultado">
+          <h3 id="verdad-titulo-resultado">Resultado</h3>
+          <p class="verdad__vacio">
+            Escribe una fórmula y pulsa «Generar tabla» para ver sus valores.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <footer class="pie">
+    <p>Lógica · deducción asistida — hecha para el curso. El aprendizaje se guarda en tu ordenador; por defecto no se envía nada a internet.</p>
+    <div class="version-caja" aria-label="Versión de la aplicación">
+      <span id="version-texto" class="version-texto">Lógica · v2.0.1</span>
+    </div>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>

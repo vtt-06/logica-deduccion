@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: logica-deduccion
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python3 web/server.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: LOGICA_APRENDIZAJE
+        value: "0"

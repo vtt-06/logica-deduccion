@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+aprendizaje.json
+web/config_ia.env
+.vscode/
+.DS_Store
