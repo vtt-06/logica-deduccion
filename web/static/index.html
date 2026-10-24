@@ -81,6 +81,29 @@
     <div class="cabecera__onda" aria-hidden="true"></div>
   </header>
 
+  <!-- ================= BUSCADOR DE DEFINICIONES Y TEORÍA ================= -->
+  <div class="buscador" role="search">
+    <div class="buscador__caja">
+      <svg class="buscador__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="10.5" cy="10.5" r="6.4" fill="none"
+                stroke="currentColor" stroke-width="1.9"/>
+        <path d="M15.4 15.4 21 21" fill="none" stroke="currentColor"
+              stroke-width="1.9" stroke-linecap="round"/>
+      </svg>
+      <input id="buscador-entrada" class="buscador__entrada" type="search"
+             placeholder="Buscar en definiciones y teoría…"
+             autocomplete="off" spellcheck="false"
+             aria-label="Buscar en definiciones y teoría"
+             aria-controls="buscador-resultados"
+             aria-expanded="false" aria-autocomplete="list"
+             role="combobox">
+      <button type="button" id="buscador-limpiar" class="buscador__limpiar"
+              aria-label="Borrar la búsqueda" hidden>×</button>
+    </div>
+    <div id="buscador-resultados" class="buscador__resultados"
+         role="listbox" aria-label="Resultados de la búsqueda" hidden></div>
+  </div>
+
   <main class="contenido">
 
     <!-- ================= PASO 1 ================= -->
@@ -571,7 +594,7 @@
 
             <article class="definicion">
               <h4 class="definicion__titulo">
-                <span class="definicion__numero">2.0.2</span> Conjunto adecuado de conectivas
+                <span class="definicion__numero">2.0.3</span> Conjunto adecuado de conectivas
               </h4>
               <div class="definicion__texto">
                 <p>Un conjunto adecuado de conectivas es un conjunto tal que
@@ -2197,7 +2220,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
   <footer class="pie">
     <p>Lógica · deducción asistida — hecha para el curso. El aprendizaje se guarda en tu ordenador; por defecto no se envía nada a internet.</p>
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">Lógica · v2.0.2</span>
+      <span id="version-texto" class="version-texto">Lógica · v2.0.3</span>
     </div>
   </footer>
 

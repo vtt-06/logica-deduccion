@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.0.2.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.0.3.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -144,6 +144,14 @@ La página sigue el mismo flujo que el programa de terminal:
 
 Incluye ejemplos de un clic (incluidos los dos ejercicios del examen), guarda
 el último borrador en el navegador y funciona en pantallas de móvil.
+
+### Buscador
+
+Justo debajo de la cabecera hay una **lupa** para buscar a la vez en las
+definiciones y en la guía de teoría. Los resultados se agrupan por tipo y
+muestran el capítulo al que pertenecen. Al pulsar uno, se abre el menú
+correspondiente y se resalta el apartado encontrado. También se puede navegar
+con las flechas `↑` `↓`, abrir con `Enter` y cerrar con `Esc`.
 
 ### Guía de teoría
 

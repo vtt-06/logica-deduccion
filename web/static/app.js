@@ -1052,17 +1052,308 @@
     return control;
   }
 
-  configurarMenuLateral({
+  const menuDefiniciones = configurarMenuLateral({
     menu: $("#menu-definiciones"),
     boton: $("#btn-definiciones"),
     botonCerrar: $("#btn-cerrar-definiciones")
   });
 
-  configurarMenuLateral({
+  const menuTeoria = configurarMenuLateral({
     menu: $("#menu-teoria"),
     boton: $("#btn-teoria"),
     botonCerrar: $("#btn-cerrar-teoria")
   });
+
+  /* ------------------------------------------------------------------ */
+  /* Buscador de definiciones y teoría                                  */
+  /* ------------------------------------------------------------------ */
+  const buscadorEntrada = $("#buscador-entrada");
+  const buscadorLimpiar = $("#buscador-limpiar");
+  const buscadorResultados = $("#buscador-resultados");
+  const buscadorIndice = [];
+  let buscadorActivo = -1;
+
+  function normalizarTexto(texto) {
+    return String(texto || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function crearIndiceBuscador() {
+    const fichas = [];
+    const definiciones = $$("#menu-definiciones .definicion");
+    definiciones.forEach((articulo) => {
+      const tituloEl = articulo.querySelector(".definicion__titulo");
+      const textoEl = articulo.querySelector(".definicion__texto");
+      const seccion = articulo.closest(".teoria-seccion");
+      const capitulo = seccion ? seccion.querySelector("h3") : null;
+      const titulo = tituloEl ? tituloEl.textContent : "";
+      const texto = textoEl ? textoEl.textContent : "";
+      if (!titulo.trim()) return;
+      fichas.push({
+        tipo: "definicion",
+        titulo: titulo.replace(/\s+/g, " ").trim(),
+        contexto: capitulo ? capitulo.textContent.trim() : "Definición",
+        texto: texto.replace(/\s+/g, " ").trim(),
+        destino: articulo,
+        menu: menuDefiniciones
+      });
+    });
+
+    $$("#menu-teoria .teoria-seccion").forEach((seccion) => {
+      const tituloEl = seccion.querySelector("h3");
+      if (!tituloEl) return;
+      const kicker = seccion.querySelector(".teoria-kicker");
+      fichas.push({
+        tipo: "teoria",
+        titulo: tituloEl.textContent.replace(/\s+/g, " ").trim(),
+        contexto: kicker ? kicker.textContent.trim() : "Guía de teoría",
+        texto: seccion.textContent.replace(/\s+/g, " ").trim(),
+        destino: seccion,
+        menu: menuTeoria
+      });
+    });
+
+    fichas.forEach((ficha) => {
+      ficha.tituloNorm = normalizarTexto(ficha.titulo);
+      ficha.contextoNorm = normalizarTexto(ficha.contexto);
+      ficha.textoNorm = normalizarTexto(ficha.texto);
+    });
+    return fichas;
+  }
+
+  function resaltarTexto(texto, terminos) {
+    const fragmento = document.createDocumentFragment();
+    if (!terminos.length) {
+      fragmento.append(document.createTextNode(texto));
+      return fragmento;
+    }
+    const patron = new RegExp(
+      "(" + terminos.map((t) =>
+        t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")",
+      "gi");
+    let ultimo = 0;
+    String(texto).replace(patron, (coincidencia, _grupo, posicion) => {
+      if (posicion > ultimo) {
+        fragmento.append(document.createTextNode(
+          texto.slice(ultimo, posicion)));
+      }
+      const marca = document.createElement("mark");
+      marca.textContent = coincidencia;
+      fragmento.append(marca);
+      ultimo = posicion + coincidencia.length;
+      return coincidencia;
+    });
+    if (ultimo < texto.length) {
+      fragmento.append(document.createTextNode(texto.slice(ultimo)));
+    }
+    return fragmento;
+  }
+
+  function recortarTexto(texto, terminos) {
+    const limite = 150;
+    if (texto.length <= limite) return texto;
+    let posicion = -1;
+    for (const termino of terminos) {
+      const encontrado = normalizarTexto(texto).indexOf(normalizarTexto(termino));
+      if (encontrado !== -1 && (posicion === -1 || encontrado < posicion)) {
+        posicion = encontrado;
+      }
+    }
+    if (posicion < 0) return texto.slice(0, limite) + "…";
+    const inicio = Math.max(0, posicion - 45);
+    const fin = Math.min(texto.length, inicio + limite);
+    return (inicio > 0 ? "…" : "") + texto.slice(inicio, fin) +
+      (fin < texto.length ? "…" : "");
+  }
+
+  function buscarFichas(consulta) {
+    const terminos = normalizarTexto(consulta).split(" ").filter(Boolean);
+    if (!terminos.length) return [];
+    const resultados = [];
+    buscadorIndice.forEach((ficha) => {
+      const enTitulo = terminos.every((t) => ficha.tituloNorm.includes(t));
+      const enContexto = terminos.every((t) => ficha.contextoNorm.includes(t) ||
+        ficha.tituloNorm.includes(t));
+      const textoCompleto = ficha.tituloNorm + " " + ficha.contextoNorm +
+        " " + ficha.textoNorm;
+      if (!terminos.every((t) => textoCompleto.includes(t))) return;
+      let puntos = 60;
+      if (enTitulo) {
+        puntos = ficha.tituloNorm.startsWith(terminos[0]) ? 160 : 140;
+      } else if (enContexto) {
+        puntos = 100;
+      }
+      puntos -= Math.min(30, Math.floor(ficha.texto.length / 1200));
+      resultados.push({ ficha, puntos });
+    });
+    resultados.sort((a, b) => {
+      if (a.ficha.tipo !== b.ficha.tipo) {
+        return a.ficha.tipo === "definicion" ? -1 : 1;
+      }
+      return b.puntos - a.puntos;
+    });
+    const definiciones = resultados.filter((r) =>
+      r.ficha.tipo === "definicion").slice(0, 9);
+    const teoria = resultados.filter((r) =>
+      r.ficha.tipo === "teoria").slice(0, 6);
+    return definiciones.concat(teoria).map((r) => r.ficha);
+  }
+
+  function cerrarResultadosBuscador() {
+    if (!buscadorResultados) return;
+    buscadorResultados.hidden = true;
+    buscadorResultados.textContent = "";
+    buscadorEntrada.setAttribute("aria-expanded", "false");
+    buscadorEntrada.removeAttribute("aria-activedescendant");
+    buscadorActivo = -1;
+  }
+
+  function marcarResultadoActivo() {
+    const botones = Array.from(
+      buscadorResultados.querySelectorAll(".buscador__resultado"));
+    botones.forEach((boton, indice) => {
+      const activo = indice === buscadorActivo;
+      boton.classList.toggle("activo", activo);
+      boton.setAttribute("aria-selected", activo ? "true" : "false");
+    });
+    const actual = botones[buscadorActivo];
+    if (actual) {
+      buscadorEntrada.setAttribute("aria-activedescendant", actual.id);
+      actual.scrollIntoView({ block: "nearest" });
+    } else {
+      buscadorEntrada.removeAttribute("aria-activedescendant");
+    }
+  }
+
+  function abrirResultadoBuscador(ficha) {
+    if (!ficha) return;
+    cerrarResultadosBuscador();
+    if (ficha.menu) ficha.menu.boton.click();
+    window.setTimeout(() => {
+      ficha.destino.scrollIntoView({ block: "center" });
+      ficha.destino.classList.remove("buscador-destino");
+      void ficha.destino.offsetWidth;
+      ficha.destino.classList.add("buscador-destino");
+      window.setTimeout(() => {
+        ficha.destino.classList.remove("buscador-destino");
+      }, 2600);
+    }, 70);
+  }
+
+  function renderResultadosBuscador(resultados, consulta) {
+    if (!buscadorResultados) return;
+    buscadorResultados.textContent = "";
+    buscadorActivo = -1;
+
+    if (!resultados.length) {
+      const vacio = crear("p", "buscador__vacio",
+        "No hay definiciones ni teoría que coincidan con «" +
+        consulta.trim() + "».");
+      buscadorResultados.append(vacio);
+    } else {
+      const terminos = consulta.trim().split(/\s+/).filter(Boolean);
+      let tipoAnterior = null;
+      resultados.forEach((ficha, indice) => {
+        if (ficha.tipo !== tipoAnterior) {
+          tipoAnterior = ficha.tipo;
+          buscadorResultados.append(crear("p", "buscador__grupo",
+            ficha.tipo === "definicion" ? "Definiciones" : "Teoría"));
+        }
+        const boton = crear("button", "buscador__resultado");
+        boton.type = "button";
+        boton.id = "buscador-resultado-" + indice;
+        boton.setAttribute("role", "option");
+        boton.setAttribute("aria-selected", "false");
+
+        const linea = crear("span", "buscador__resultado-titulo");
+        const texto = crear("span");
+        texto.append(resaltarTexto(ficha.titulo, terminos));
+        linea.append(texto);
+        linea.append(crear("span", "buscador__tipo buscador__tipo--" +
+          ficha.tipo, ficha.tipo === "definicion" ? "Definición" : "Teoría"));
+        boton.append(linea);
+
+        if (ficha.contexto) {
+          boton.append(crear("span", "buscador__resultado-contexto",
+            ficha.contexto));
+        }
+        const resumen = crear("span", "buscador__resultado-texto");
+        resumen.append(resaltarTexto(
+          recortarTexto(ficha.texto, terminos), terminos));
+        boton.append(resumen);
+
+        boton.addEventListener("click", () => abrirResultadoBuscador(ficha));
+        boton.addEventListener("pointermove", () => {
+          buscadorActivo = indice;
+          marcarResultadoActivo();
+        });
+        buscadorResultados.append(boton);
+      });
+      buscadorResultados.append(crear("p", "buscador__pie",
+        "↑ ↓ para moverte · Enter para abrir · Esc para cerrar"));
+    }
+
+    buscadorResultados.hidden = false;
+    buscadorEntrada.setAttribute("aria-expanded", "true");
+  }
+
+  function ejecutarBusqueda() {
+    if (!buscadorEntrada || !buscadorResultados) return;
+    const consulta = buscadorEntrada.value;
+    if (buscadorLimpiar) buscadorLimpiar.hidden = !consulta.length;
+    if (normalizarTexto(consulta).length < 2) {
+      cerrarResultadosBuscador();
+      return;
+    }
+    renderResultadosBuscador(buscarFichas(consulta), consulta);
+  }
+
+  if (buscadorEntrada && buscadorResultados) {
+    buscadorIndice.push(...crearIndiceBuscador());
+
+    buscadorEntrada.addEventListener("input", ejecutarBusqueda);
+    buscadorEntrada.addEventListener("focus", () => {
+      if (buscadorEntrada.value.trim().length >= 2) ejecutarBusqueda();
+    });
+    buscadorEntrada.addEventListener("keydown", (evento) => {
+      const botones = Array.from(
+        buscadorResultados.querySelectorAll(".buscador__resultado"));
+      if (evento.key === "ArrowDown") {
+        if (!botones.length) return;
+        evento.preventDefault();
+        buscadorActivo = (buscadorActivo + 1) % botones.length;
+        marcarResultadoActivo();
+      } else if (evento.key === "ArrowUp") {
+        if (!botones.length) return;
+        evento.preventDefault();
+        buscadorActivo = buscadorActivo <= 0
+          ? botones.length - 1 : buscadorActivo - 1;
+        marcarResultadoActivo();
+      } else if (evento.key === "Enter") {
+        if (buscadorActivo >= 0 && botones[buscadorActivo]) {
+          evento.preventDefault();
+          botones[buscadorActivo].click();
+        }
+      } else if (evento.key === "Escape") {
+        cerrarResultadosBuscador();
+      }
+    });
+    if (buscadorLimpiar) {
+      buscadorLimpiar.addEventListener("click", () => {
+        buscadorEntrada.value = "";
+        buscadorLimpiar.hidden = true;
+        cerrarResultadosBuscador();
+        buscadorEntrada.focus();
+      });
+    }
+    document.addEventListener("click", (evento) => {
+      if (!evento.target.closest(".buscador")) cerrarResultadosBuscador();
+    });
+  }
 
   /* ------------------------------------------------------------------ */
   /* Memoria: ejercicios completos para revisar                         */
