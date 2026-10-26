@@ -1036,6 +1036,7 @@
         if (datos.ia) {
           estadoIA.textContent = "Ayuda exterior (A.E.) conectada" +
             (datos.modelo ? " (" + datos.modelo + ")" : "") +
+            (datos.gratuita ? ", servicio gratuito" : "") +
             (datos.busqueda ? " con búsqueda web." : " sin búsqueda web.");
         } else {
           estadoIA.textContent =

@@ -1,7 +1,9 @@
 """Conector opcional con un servicio de IA compatible con OpenAI.
 
-Está desactivado por defecto: sólo se usa si se han definido estas variables
-de entorno al arrancar la aplicación:
+Si no se define ningún proveedor, se usa un servicio gratuito sin clave
+(``LOGICA_IA_FALLBACK=0`` lo desactiva).  Ese servicio tiene un límite de una
+petición cada 30 segundos por IP, así que para un uso intensivo conviene
+configurar un proveedor propio con estas variables de entorno:
 
     LOGICA_IA_URL    dirección base, p. ej. https://api.openai.com/v1
     LOGICA_IA_MODEL  modelo, p. ej. gpt-4o-mini
@@ -13,23 +15,52 @@ La URL también puede ser la dirección completa .../chat/completions.
 Cuando está activo, las frases que el analizador local no reconoce se envían
 a ese servicio para que proponga una formalización.  La propuesta se valida
 con el analizador de fórmulas y el usuario siempre puede corregirla antes de
-deducir.  Si no hay variables de entorno, no se envía nada a internet.
+deducir.  Con ``LOGICA_IA_FALLBACK=0`` y sin proveedor configurado no se envía
+nada a internet.
 """
 
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 
 import busqueda
 from version import VERSION
 
-TIMEOUT_POR_DEFECTO = 20
+TIMEOUT_POR_DEFECTO = 40
+
+# Servicio gratuito compatible con OpenAI, sin clave.  Se usa sólo cuando no
+# hay un proveedor configurado en el entorno.  Tiene un límite de una petición
+# cada 30 segundos por dirección IP.
+FALLBACK_URL = "https://text.pollinations.ai/openai"
+FALLBACK_MODEL = "openai-fast"
+
+
+def _fallback_activo():
+    """Permite desactivar el servicio gratuito con LOGICA_IA_FALLBACK=0."""
+    valor = os.environ.get("LOGICA_IA_FALLBACK", "1").strip().lower()
+    return valor not in ("0", "no", "false", "off")
+
+
+def _tiene_proveedor():
+    return bool(os.environ.get("LOGICA_IA_URL") and
+                os.environ.get("LOGICA_IA_MODEL"))
 
 
 def configurado():
-    return bool(os.environ.get("LOGICA_IA_URL") and
-                os.environ.get("LOGICA_IA_MODEL"))
+    return _tiene_proveedor() or _fallback_activo()
+
+
+def modelo():
+    if _tiene_proveedor():
+        return os.environ["LOGICA_IA_MODEL"]
+    return FALLBACK_MODEL if _fallback_activo() else ""
+
+
+def gratuita():
+    """True si se está usando el servicio externo sin clave."""
+    return not _tiene_proveedor() and _fallback_activo()
 
 
 def busqueda_activa():
@@ -38,9 +69,9 @@ def busqueda_activa():
 
 
 def _endpoint():
+    if not _tiene_proveedor():
+        return FALLBACK_URL if _fallback_activo() else ""
     url = os.environ.get("LOGICA_IA_URL", "").strip().rstrip("/")
-    if not url:
-        return ""
     if not url.endswith("/chat/completions"):
         url += "/chat/completions"
     return url
@@ -155,13 +186,16 @@ def formalizar(frases, cuantificado, general=False, indices=None):
                         "que no correspondan y no inventes reglas.")
 
     cuerpo = {
-        "model": os.environ["LOGICA_IA_MODEL"],
+        "model": modelo(),
         "temperature": 0,
         "messages": [
             {"role": "system", "content": sistema},
             {"role": "user", "content": usuario},
         ],
     }
+    if not _tiene_proveedor():
+        # El servicio gratuito pide identificar la aplicación para sus límites.
+        cuerpo["referrer"] = "logica-deduccion"
     # Algunos proveedores (por ejemplo, Groq detrás de Cloudflare) rechazan
     # el User-Agent por defecto de urllib con un 403.  Identificamos la app.
     cabeceras = {
@@ -175,11 +209,40 @@ def formalizar(frases, cuantificado, general=False, indices=None):
     peticion = urllib.request.Request(
         _endpoint(), data=json.dumps(cuerpo).encode("utf-8"),
         headers=cabeceras, method="POST")
+    espera = float(os.environ.get("LOGICA_IA_TIMEOUT", TIMEOUT_POR_DEFECTO))
+
+    def enviar():
+        with urllib.request.urlopen(peticion, timeout=espera) as respuesta:
+            return json.loads(respuesta.read().decode("utf-8"))
+
     try:
-        with urllib.request.urlopen(
-                peticion, timeout=float(os.environ.get(
-                    "LOGICA_IA_TIMEOUT", TIMEOUT_POR_DEFECTO))) as respuesta:
-            datos = json.loads(respuesta.read().decode("utf-8"))
+        datos = enviar()
+    except urllib.error.HTTPError as exc:
+        # El servicio gratuito devuelve 402/429 cuando se hacen dos consultas
+        # seguidas.  Reintentamos una vez tras la espera que él mismo indica.
+        if _tiene_proveedor() or exc.code not in (402, 429):
+            return None
+        demora = 7
+        try:
+            texto = exc.read().decode("utf-8", "replace")
+            marca = "Retry after "
+            if marca in texto:
+                resto = texto.split(marca, 1)[1]
+                digitos = ""
+                for caracter in resto:
+                    if caracter.isdigit():
+                        digitos += caracter
+                    else:
+                        break
+                if digitos:
+                    demora = min(20, max(1, int(digitos)))
+        except (OSError, ValueError):
+            pass
+        time.sleep(demora)
+        try:
+            datos = enviar()
+        except (urllib.error.URLError, OSError, ValueError, KeyError):
+            return None
     except (urllib.error.URLError, OSError, ValueError, KeyError):
         return None
 

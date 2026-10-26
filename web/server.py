@@ -1053,7 +1053,8 @@ class Handler(BaseHTTPRequestHandler):
                         "version": VERSION,
                         "ia": asistente_ia.configurado(),
                         "busqueda": asistente_ia.busqueda_activa(),
-                        "modelo": os.environ.get("LOGICA_IA_MODEL", "")})
+                        "modelo": asistente_ia.modelo(),
+                        "gratuita": asistente_ia.gratuita()})
             return
         self._estatico(ruta)
 
@@ -1117,7 +1118,7 @@ def main(argv=None):
     print("  Desde otro equipo:  http://%s:%d" % (ip_local(), args.port))
     print("  (misma red WiFi; Ctrl+C para parar)")
     if asistente_ia.configurado():
-        print("  IA conectada:       %s" % os.environ.get("LOGICA_IA_MODEL"))
+        print("  IA conectada:       %s" % asistente_ia.modelo())
     print()
     sys.stdout.flush()
     try:

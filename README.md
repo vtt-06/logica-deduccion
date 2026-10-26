@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.4.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.5.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -402,8 +402,10 @@ reinicia la web.
 
 #### Privacidad y límites
 
-- Si no existe `web/config_ia.env` y no hay variables `LOGICA_IA_*`, **no se
-  envía nada a internet**.
+- Si no hay ningún proveedor configurado, se usa un **servicio gratuito sin
+  clave** para la ayuda exterior. Ese servicio recibe las frases dudosas y
+  tiene un límite de una petición cada 30 segundos por IP. Se puede desactivar
+  con `LOGICA_IA_FALLBACK=0`; en ese caso **no se envía nada a internet**.
 - Con la búsqueda activada, las frases se envían a DuckDuckGo; después, las
   frases y los resúmenes se envían al proveedor de IA. No lo actives con datos
   que no quieras compartir.

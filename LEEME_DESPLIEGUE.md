@@ -31,9 +31,13 @@ No subas:
 
 ## Activar la ayuda exterior (A.E.)
 
-La ayuda exterior es opcional y **no se activa sola**: hay que añadir sus
-variables en **Environment** del servicio de Render. Sin ellas, la web
-funciona con el analizador local y no envía nada a internet.
+La ayuda exterior funciona **sin configurar nada**: si no hay proveedor, se
+usa el servicio gratuito `text.pollinations.ai` (modelo `openai-fast`), que no
+necesita clave. Tiene un límite de una petición cada 30 segundos por IP.
+
+Para desactivarla por completo, define `LOGICA_IA_FALLBACK=0`. Para tener más
+fiabilidad y sin ese límite, configura un proveedor propio en **Environment**
+del servicio de Render.
 
 Con una cuenta de Groq (nivel gratuito), añade:
 
