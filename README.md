@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.2.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.3.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -259,6 +259,10 @@ Además, cada ejercicio que se deduce bien se guarda completo. La próxima vez:
   sustituyen los enunciados por huecos y se conservan las palabras conectivas.
   Por ejemplo, de «En tanto llueva, me mojo» con fórmula `p→q` se aprende la
   plantilla `en tanto §, §`, que sirve para «En tanto nieva, me abrigo».
+
+Si el banco está vacío al arrancar el servidor, se rellena una sola vez con
+las frases de `banco_ejemplos.json`. Así la sección nunca aparece vacía tras un
+reinicio, aunque no se duplican las frases que ya haya guardadas.
 
 El botón **«Ver memoria de frases»**, situado al final de la página, abre un
 menú con el banco de frases y los ejercicios guardados. Al pulsar en una frase

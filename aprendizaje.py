@@ -312,7 +312,8 @@ class Aprendizaje:
         vocabulario = {}
         if isinstance(vocab, dict):
             for letra, descripcion in vocab.items():
-                descripcion = str(descripcion or "").strip()
+                descripcion = re.sub(r"^=>\s*", "",
+                                     str(descripcion or "")).strip()
                 if descripcion:
                     vocabulario[str(letra)] = descripcion
         registro = {

@@ -87,6 +87,46 @@ MEMORIA = Aprendizaje()
 APRENDIZAJE = MEMORIA if _memoria_activa() else None
 
 
+def _sembrar_banco():
+    """Rellena el banco con ejemplos la primera vez que está vacío.
+
+    El almacenamiento de Render es efímero: al reiniciar el servicio se pierde
+    ``aprendizaje.json``.  Sin esta semilla, el banco aparecería vacío en cada
+    arranque y parecería que no se guarda nada.  Sólo actúa si el banco está
+    vacío, así que nunca duplica ni pisa las frases de los visitantes.
+    """
+    try:
+        if MEMORIA.estadisticas().get("banco"):
+            return 0
+    except Exception:
+        return 0
+    ruta = RAIZ.parent / "banco_ejemplos.json"
+    try:
+        with ruta.open(encoding="utf-8") as fh:
+            ejemplos = json.load(fh)
+    except (OSError, ValueError):
+        return 0
+    if not isinstance(ejemplos, list):
+        return 0
+    sembradas = 0
+    for ejemplo in ejemplos:
+        if not isinstance(ejemplo, dict):
+            continue
+        try:
+            if MEMORIA.registrar_frase(
+                    ejemplo.get("texto", ""), ejemplo.get("formula", ""),
+                    ejemplo.get("vocab") or {},
+                    ejemplo.get("calculus") == "pred",
+                    ejemplo.get("fuente") or "ejemplo"):
+                sembradas += 1
+        except Exception:
+            continue
+    return sembradas
+
+
+_sembrar_banco()
+
+
 # ==========================================================================
 # Formalización
 # ==========================================================================

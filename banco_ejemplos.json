@@ -1,0 +1,58 @@
+[
+  {
+    "texto": "Hoy estudio lógica.",
+    "formula": "p",
+    "vocab": {"p": "Hoy estudio lógica"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Hoy apruebo lógica.",
+    "formula": "q",
+    "vocab": {"q": "Hoy apruebo lógica"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Hace sol.",
+    "formula": "p",
+    "vocab": {"p": "hace sol"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Voy a la playa.",
+    "formula": "q",
+    "vocab": {"q": "voy a la playa"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Si hace sol, voy a la playa.",
+    "formula": "p→q",
+    "vocab": {"p": "hace sol", "q": "voy a la playa"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Llueve.",
+    "formula": "p",
+    "vocab": {"p": "llueve"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Si llueve, me mojo.",
+    "formula": "p→q",
+    "vocab": {"p": "llueve", "q": "me mojo"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Me mojo.",
+    "formula": "q",
+    "vocab": {"q": "me mojo"},
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  }
+]
