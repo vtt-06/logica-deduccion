@@ -887,10 +887,20 @@
       }
       estado.lineas = data.lines;
       estado.plain = data.plain;
+      let repintarFormulas = false;
       if (data.correcciones) {
         Object.entries(data.correcciones).forEach(([indice, formula]) => {
           const item = estado.items[Number(indice)];
-          if (item) item.formula = formula;
+          if (item) {
+            item.formula = formula;
+            item.ok = true;
+            item.confianza = "alta";
+            item.motivo_confianza = "";
+            if (data.ia_aplicada) {
+              item.source = "ia";
+              repintarFormulas = true;
+            }
+          }
           const input = $("#formula-" + indice);
           if (input) {
             input.value = formula;
@@ -898,8 +908,16 @@
           }
         });
       }
+      if (data.ia_aplicada && data.vocab) {
+        estado.vocab = data.vocab;
+        pintarVocabulario(data.vocab);
+      }
+      if (repintarFormulas) pintarFormulas(estado.items);
       if (data.aviso_variante) {
         aviso(avisoFormal, data.aviso_variante, "");
+      }
+      if (data.ia_aplicada && data.aviso_ia) {
+        aviso(avisoFormal, data.aviso_ia, "ok");
       }
       pintarResumen(data.premises, data.goal);
       pintarPrueba(data.lines);

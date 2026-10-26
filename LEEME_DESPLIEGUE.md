@@ -29,5 +29,34 @@ No subas:
 5. Pulsa **Deploy**. La dirección será parecida a
    `https://logica-deduccion.onrender.com`.
 
+## Activar la ayuda exterior (A.E.)
+
+La ayuda exterior es opcional y **no se activa sola**: hay que añadir sus
+variables en **Environment** del servicio de Render. Sin ellas, la web
+funciona con el analizador local y no envía nada a internet.
+
+Con una cuenta de Groq (nivel gratuito), añade:
+
+| Variable | Valor |
+| --- | --- |
+| `LOGICA_IA_URL` | `https://api.groq.com/openai/v1` |
+| `LOGICA_IA_MODEL` | `openai/gpt-oss-120b` |
+| `LOGICA_IA_KEY` | tu clave de Groq |
+| `LOGICA_BUSQUEDA` | `1` (opcional, para buscar antes en internet) |
+
+Con Google AI Studio, usa
+`https://generativelanguage.googleapis.com/v1beta/openai` y el modelo que
+tengas disponible.
+
+No pongas la clave en `render.yaml` ni en el repositorio: es público. Guárdala
+sólo en las variables de entorno de Render. Después de añadirla, pulsa
+**Manual Deploy**. Si la clave funciona, el pie de la página mostrará
+«Ayuda exterior (A.E.) conectada».
+
+Con la ayuda exterior activa, si una formalización no permite encontrar la
+deducción, la web consulta al modelo una formalización alternativa. La
+propuesta se comprueba con el motor local antes de mostrarla y las fórmulas
+corregidas aparecen marcadas como «A.E.».
+
 El plan gratuito de Render duerme la aplicación tras unos minutos sin uso;
 la primera visita después puede tardar en despertar.

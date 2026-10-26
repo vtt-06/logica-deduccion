@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.3.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.4.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -359,6 +359,15 @@ aparezca en tu panel de Google AI Studio.
 5. La respuesta se valida con el analizador de fórmulas del curso.
 6. La fórmula aparece marcada como **«A.E.»** (ayuda exterior) para que la revises antes de
    deducir. Si algo falla, se vuelve al funcionamiento local sin romper nada.
+
+Si la formalización es válida pero **no se encuentra la deducción**, la web
+consulta también a la ayuda exterior (A.E.) con las frases originales. La IA
+puede proponer una formalización alternativa; esa propuesta **no se acepta
+directamente**: se vuelve a comprobar con el motor de deducción del curso. Sólo
+si la prueba se valida, se muestran las fórmulas corregidas marcadas como
+**«A.E.»**, con un aviso para revisarlas. Si tampoco así hay deducción, se
+mantiene el mensaje de error explicando que puede faltar una premisa o que la
+conclusión no se sigue.
 
 La búsqueda sola no resuelve el ejercicio: los resultados son texto libre y
 pueden ser de otro ejercicio. El modelo es el que interpreta esos resultados

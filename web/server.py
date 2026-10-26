@@ -168,7 +168,8 @@ def _sugerencias_vocabulario(form, formulas, quantified):
 
 def _vocab_con_textos(formulas, textos, form, quantified):
     """Vocabulario ordenado por aparición, mezclando textos de la IA y locales."""
-    locales = {t.letter: t.text.strip(" ,.") for t in form.vocab}
+    locales = ({t.letter: t.text.strip(" ,.") for t in form.vocab}
+               if form is not None else {})
     orden, vistos = [], set()
     for f in formulas:
         for a in atoms(f):
@@ -774,6 +775,79 @@ def _legado_sin_duplicar(datos):
     return resultado
 
 
+def _ayuda_exterior_deduccion(data, formulas, cuantificado):
+    """Pide a la IA una formalización alternativa cuando no hay deducción.
+
+    La propuesta se comprueba siempre con el motor local: si la IA cambia una
+    fórmula y con ella sí se deduce la conclusión, se devuelve esa prueba.
+    Nunca se acepta una deducción sin verificarla.
+    """
+    if not asistente_ia.configurado():
+        return None
+    frases = data.get("sentences")
+    if not isinstance(frases, list) or len(frases) != len(formulas):
+        return None
+    frases = [str(f).strip() for f in frases]
+    if any(not f for f in frases):
+        return None
+
+    propuesta = asistente_ia.formalizar(frases, cuantificado, general=True)
+    if not propuesta:
+        return {"lines": None,
+                "aviso": ("No se ha podido consultar la ayuda exterior (A.E.) "
+                          "o no ha devuelto una propuesta válida. Revisa las "
+                          "fórmulas a mano.")}
+    nuevas = []
+    for texto in propuesta.get("formulas") or []:
+        try:
+            nuevas.append(parse_formula(str(texto).strip()))
+        except Exception:
+            return {"lines": None,
+                    "aviso": ("La ayuda exterior (A.E.) ha devuelto fórmulas "
+                              "que no se pueden leer. Revisa las fórmulas a "
+                              "mano.")}
+    if len(nuevas) != len(formulas):
+        return {"lines": None,
+                "aviso": ("La ayuda exterior (A.E.) no ha devuelto una "
+                          "fórmula por frase. Revisa las fórmulas a mano.")}
+
+    premisas, meta = nuevas[:-1], nuevas[-1]
+    try:
+        lines = prove(premisas, meta)
+    except Exception:
+        traceback.print_exc()
+        lines = None
+    if lines is None:
+        return {"lines": None,
+                "aviso": ("La ayuda exterior (A.E.) tampoco ha encontrado "
+                          "una deducción válida con estas frases. Comprueba "
+                          "si falta alguna premisa o corrige las fórmulas.")}
+
+    correcciones = {}
+    for i, (antes, despues) in enumerate(zip(formulas, nuevas)):
+        if render(antes) != render(despues):
+            correcciones[str(i)] = render(despues)
+
+    textos = {}
+    if isinstance(data.get("vocab"), dict):
+        for letra, descripcion in data["vocab"].items():
+            descripcion = str(descripcion or "").strip()
+            if letra and descripcion:
+                textos[str(letra)] = descripcion
+    for letra, descripcion in (propuesta.get("vocab") or {}).items():
+        descripcion = str(descripcion or "").strip()
+        if descripcion:
+            textos[str(letra)] = descripcion
+
+    return {
+        "lines": lines,
+        "premisas": premisas,
+        "meta": meta,
+        "correcciones": correcciones,
+        "vocab": _vocab_con_textos(nuevas, textos, None, cuantificado),
+    }
+
+
 def api_deducir(data):
     crudas = data.get("formulas", [])
     if not isinstance(crudas, list) or len(crudas) < 2:
@@ -791,6 +865,7 @@ def api_deducir(data):
                 "errores": errores}
 
     premisas, meta = formulas[:-1], formulas[-1]
+    cuantificado = any(a.kind == "pred" for f in formulas for a in atoms(f))
     try:
         lines = prove(premisas, meta)
     except Exception:
@@ -800,6 +875,9 @@ def api_deducir(data):
 
     correcciones = {}
     aviso_variante = ""
+    aviso_ia = ""
+    ia_aplicada = False
+    vocab = None
     if lines is None:
         variante = _variante_docente(premisas, meta)
         if variante is not None:
@@ -811,19 +889,36 @@ def api_deducir(data):
                 "la solución de clase; revisa si esa era la intención."
                 % (indice + 1, render(corregida)))
         else:
-            return {"ok": False,
-                    "error": "No se ha encontrado una deducción con estas "
-                             "reglas. Puede que la conclusión no se siga de "
-                             "las premisas (revisa si falta alguna premisa, "
-                             "como el antecedente de un condicional) o que "
-                             "haya que corregir alguna fórmula."}
+            ayuda = _ayuda_exterior_deduccion(data, formulas, cuantificado)
+            if ayuda is not None and ayuda.get("lines") is not None:
+                premisas = ayuda["premisas"]
+                meta = ayuda["meta"]
+                lines = ayuda["lines"]
+                correcciones = ayuda["correcciones"]
+                vocab = ayuda["vocab"]
+                ia_aplicada = True
+                aviso_ia = (
+                    "La formalización no permitía la deducción. La ayuda "
+                    "exterior (A.E.) ha propuesto fórmulas nuevas y la "
+                    "deducción se ha comprobado con las reglas del curso. "
+                    "Revisa las fórmulas marcadas como «A.E.» antes de usarlas.")
+            else:
+                error = ("No se ha encontrado una deducción con estas "
+                         "reglas. Puede que la conclusión no se siga de las "
+                         "premisas (revisa si falta alguna premisa, como el "
+                         "antecedente de un condicional) o que haya que "
+                         "corregir alguna fórmula.")
+                if ayuda and ayuda.get("aviso"):
+                    error += " " + ayuda["aviso"]
+                return {"ok": False, "error": error,
+                        "ia_aplicada": False}
 
     vistas = _vistas_de_prueba(lines)
     plain = formato_libro(lines)
     aprendido = _registrar_confirmadas(data, list(premisas) + [meta])
     _registrar_ejercicio(data, premisas, meta, vistas, plain,
                          correcciones, aviso_variante)
-    return {
+    respuesta = {
         "ok": True,
         "lines": vistas,
         "premises": [render(p) for p in premisas],
@@ -832,7 +927,12 @@ def api_deducir(data):
         "aprendido": aprendido,
         "correcciones": correcciones,
         "aviso_variante": aviso_variante,
+        "ia_aplicada": ia_aplicada,
+        "aviso_ia": aviso_ia,
     }
+    if vocab is not None:
+        respuesta["vocab"] = vocab
+    return respuesta
 
 
 def api_memoria(consulta):
