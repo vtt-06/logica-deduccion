@@ -247,7 +247,7 @@ no añade dependencias al servidor. Limitaciones:
 - Revisa siempre el texto reconocido: puede confundir palabras o cortar una
   frase al hacer una pausa.
 
-### Aprendizaje local
+### Aprendizaje y banco de frases
 
 Cada frase que se formaliza se guarda automáticamente en el **banco de
 frases** de `aprendizaje.json`, aunque la deducción no llegue a completarse.

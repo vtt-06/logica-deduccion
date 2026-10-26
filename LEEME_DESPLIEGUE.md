@@ -9,7 +9,7 @@ Sube el contenido completo de esta carpeta, manteniendo las subcarpetas
 
 No subas:
 
-- `aprendizaje.json` (memoria local; además no debe compartirse entre visitantes).
+- `aprendizaje.json` (memoria local de tu ordenador; el servidor crea la suya).
 - `web/config_ia.env` (puede contener claves privadas).
 - `__pycache__`, `.vscode` ni archivos `.DS_Store`.
 
