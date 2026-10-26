@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.0.3.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.0.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -138,7 +138,12 @@ La página sigue el mismo flujo que el programa de terminal:
 1. **Escribe** una frase por línea (o varias en la misma línea, separadas por
    puntos) y marca la conclusión con `=>`.
 2. **Revisa** la formalización propuesta. Cada fórmula se puede corregir
-   directamente; también se puede cambiar el texto del vocabulario.
+   directamente; también se puede cambiar el texto del vocabulario. Antes de
+   las fórmulas aparece siempre el **alfabeto del ejercicio**: las letras
+   usadas y la siguiente libre. Se empieza en `p` y se sigue el abecedario
+   (`q, r, s, t, u, v, w, x, y, z`); si se agotan, continúa con `aa`, `ab`…,
+   de modo que nunca se mezclan dos premisas en una sola letra. El botón
+   **«Editar las frases»** vuelve al paso 1 sin borrar nada.
 3. **Deduce**: la prueba aparece con la notación del libro, se puede copiar o
    descargar, y debajo está la explicación de cada línea y de la regla usada.
 
@@ -332,7 +337,7 @@ aparezca en tu panel de Google AI Studio.
 2. Se consulta la IA cuando una frase no se reconoce **o cuando el analizador
    la ha reducido a un átomo aunque contenga conectivas, cuantificadores o
    puntuación que no ha sabido interpretar**. Los átomos simples («Llueve»)
-   no disparan la consulta. También puedes pulsar **«Consultar IA»** para
+   no disparan la consulta. También puedes pulsar **«Ayuda exterior (A.E.)»** para
    pedir una segunda opinión aunque la formalización local haya funcionado.
 3. Si `LOGICA_BUSQUEDA=1`, se busca en **DuckDuckGo** y se recogen títulos y
    resúmenes. En las frases dudosas se combinan los materiales de la UCLM de
@@ -340,7 +345,7 @@ aparezca en tu panel de Google AI Studio.
    respuesta a una sola fuente.
 4. Esas frases y esos resúmenes se envían al modelo de IA.
 5. La respuesta se valida con el analizador de fórmulas del curso.
-6. La fórmula aparece marcada como **«IA»** para que la revises antes de
+6. La fórmula aparece marcada como **«A.E.»** (ayuda exterior) para que la revises antes de
    deducir. Si algo falla, se vuelve al funcionamiento local sin romper nada.
 
 La búsqueda sola no resuelve el ejercicio: los resultados son texto libre y

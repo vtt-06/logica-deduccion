@@ -13,6 +13,7 @@
     lineas: [],
     plain: "",
     plantilla: null,
+    plantillaTexto: "",
   };
 
   const EJEMPLOS = {
@@ -197,6 +198,7 @@
       area.value = ejemplo.texto;
       fijarCalculo(ejemplo.calculo);
       estado.plantilla = ejemplo.formulas ? ejemplo.formulas.slice() : null;
+      estado.plantillaTexto = ejemplo.texto;
       guardarBorrador();
       area.focus();
       aviso(avisoEntrada, "");
@@ -208,6 +210,7 @@
   $("#btn-limpiar").addEventListener("click", () => {
     area.value = "";
     estado.plantilla = null;
+    estado.plantillaTexto = "";
     guardarBorrador();
     aviso(avisoEntrada, "");
     ["#formalizacion", "#resultado", "#explicacion"].forEach((s) => {
@@ -222,7 +225,9 @@
   });
 
   $("#btn-reformalizar").addEventListener("click", () => {
-    estado.plantilla = null;
+    // No se borra la plantilla: si el texto no ha cambiado, al volver a
+    // formalizar se reutilizan exactamente las mismas fórmulas.  Así el
+    // botón es seguro aunque se pulse sin querer.
     $("#formalizacion").hidden = true;
     $("#resultado").hidden = true;
     $("#explicacion").hidden = true;
@@ -231,6 +236,7 @@
     marcarPaso(3, "");
     detenerVoz(true);
     avisoVoz("");
+    irA($("#entrada"));
     area.focus();
   });
 
@@ -517,7 +523,7 @@
       if (item.source === "aprendida" || item.source === "ia") {
         cabecera.append(crear("span", "sello " +
           (item.source === "ia" ? "sello--ia" : ""),
-          item.source === "ia" ? "IA" : "aprendida"));
+          item.source === "ia" ? "A.E." : "aprendida"));
       }
 
       const etiqueta = crear("label", "etiqueta", "Fórmula");
@@ -552,24 +558,89 @@
           "Recuperada de una frase que ya confirmaste. Revisa que siga siendo correcta."));
       } else if (item.source === "ia") {
         caja.append(crear("p", "formula-item__nota",
-          "Propuesta por el servicio de IA configurado. Revísala antes de deducir."));
+          "Propuesta por la ayuda exterior (A.E.). Revísala antes de deducir."));
       } else if (item.ok && item.confianza === "baja") {
         caja.append(crear("p", "formula-item__nota formula-item__nota--revisar",
           (item.motivo_confianza || "Esta frase se ha tratado como un átomo.") +
-          " Revísala o pulsa «Consultar IA»."));
+          " Revísala o pide ayuda exterior (A.E.)."));
       }
       listaFormulas.append(caja);
     });
   }
 
+  const alfabetoLetras = $("#alfabeto-letras");
+  const alfabetoNota = $("#alfabeto-nota");
+
+  function letrasAlfabeto() {
+    if (estado.calculo === "pred") {
+      return "CDEFGHIJKLMNOPQRSTUVWXYZAB".split("");
+    }
+    return "pqrstuvwxyz".split("");
+  }
+
+  function pintarAlfabeto(usadas) {
+    if (!alfabetoLetras || !alfabetoNota) return;
+    const alfabeto = letrasAlfabeto();
+    const conjunto = new Set(usadas);
+    let siguiente = alfabeto.find((letra) => !conjunto.has(letra)) || "";
+    // Si se agotan p…z, el analizador continúa con aa, ab, ac…  Se muestran
+    // esas letras para que el alfabeto visible coincida con el del ejercicio.
+    const extra = usadas.filter((letra) => !alfabeto.includes(letra));
+    if (!siguiente) {
+      let i = 0;
+      do {
+        siguiente = String.fromCharCode(97 + Math.floor(i / 26)) +
+          String.fromCharCode(97 + (i % 26));
+        i += 1;
+      } while (conjunto.has(siguiente));
+      extra.push(siguiente);
+    }
+    alfabetoLetras.textContent = "";
+    alfabeto.concat(extra).forEach((letra) => {
+      const ficha = crear("span", "vocabulario__letra", letra);
+      if (conjunto.has(letra)) {
+        ficha.classList.add("vocabulario__letra--usada");
+      } else if (letra === siguiente) {
+        ficha.classList.add("vocabulario__letra--siguiente");
+        ficha.title = "Siguiente letra libre";
+      }
+      alfabetoLetras.append(ficha);
+    });
+    if (!usadas.length) {
+      alfabetoNota.textContent =
+        "La primera letra que se asigne será la " + (siguiente || "p") + ".";
+    } else {
+      alfabetoNota.textContent = "Se usan " + usadas.length +
+        (usadas.length === 1 ? " letra" : " letras") + ". " +
+        "Si hace falta otra, será la " + siguiente + ".";
+    }
+  }
+
+  function letrasDeFormulas(formulas) {
+    const encontradas = [];
+    const patron = estado.calculo === "pred" ? /([A-Z])\s*\(/g : /[a-z]+/g;
+    (formulas || []).forEach((formula) => {
+      let coincidencia;
+      patron.lastIndex = 0;
+      while ((coincidencia = patron.exec(formula)) !== null) {
+        const letra = estado.calculo === "pred" ? coincidencia[1]
+          : coincidencia[0];
+        if (!encontradas.includes(letra)) encontradas.push(letra);
+      }
+    });
+    return encontradas.map((letra) => ({ letter: letra, text: "" }));
+  }
+
   function pintarVocabulario(vocab) {
     listaVocab.textContent = "";
-    if (!vocab || !vocab.length) {
-      $(".vocabulario").hidden = true;
+    const lista = vocab || [];
+    pintarAlfabeto(lista.map((v) => v.letter));
+    if (!lista.length) {
+      listaVocab.append(crear("p", "vocabulario__vacio",
+        "Todavía no hay letras asignadas."));
       return;
     }
-    $(".vocabulario").hidden = false;
-    vocab.forEach((v) => {
+    lista.forEach((v) => {
       const fila = crear("div", "vocab-item");
       const letra = crear("span", "vocab-item__letra",
         estado.calculo === "pred" ? v.letter + "(x)" : v.letter);
@@ -597,9 +668,9 @@
     const boton = forzarIA ? $("#btn-consultar-ia") : $("#btn-resolver");
     cargando(boton, true);
     try {
-      if (estado.plantilla && !forzarIA) {
+      if (estado.plantilla && !forzarIA &&
+          area.value.trim() === estado.plantillaTexto.trim()) {
         const formulas = estado.plantilla;
-        estado.plantilla = null;
         if (formulas.length === frases.length) {
           estado.items = frases.map((texto, i) => ({
             text: texto,
@@ -607,7 +678,7 @@
             formula: formulas[i],
             ok: true,
           }));
-          estado.vocab = [];
+          estado.vocab = letrasDeFormulas(formulas);
           pintarFormulas(estado.items);
           pintarVocabulario(estado.vocab);
           $("#resultado").hidden = true;
@@ -638,9 +709,9 @@
       let mensajeFormal = data.aviso_ia || "";
       if (!mensajeFormal && data.ia_aplicada &&
           data.motivo_ia === "baja_confianza") {
-        mensajeFormal = "Se ha consultado la IA porque una frase no se " +
-          "entendía bien con el analizador local. Revisa las fórmulas " +
-          "marcadas como IA.";
+        mensajeFormal = "Se ha consultado la ayuda exterior (A.E.) porque una " +
+          "frase no se entendía bien con el analizador local. Revisa las " +
+          "fórmulas marcadas como A.E.";
       }
       aviso(avisoFormal, mensajeFormal,
         data.ia_aplicada ? "ok" : "");
@@ -941,12 +1012,13 @@
       const estadoIA = $("#estado-ia");
       if (estadoIA) {
         if (datos.ia) {
-          estadoIA.textContent = "IA conectada" +
+          estadoIA.textContent = "Ayuda exterior (A.E.) conectada" +
             (datos.modelo ? " (" + datos.modelo + ")" : "") +
             (datos.busqueda ? " con búsqueda web." : " sin búsqueda web.");
         } else {
           estadoIA.textContent =
-            "IA no configurada: sólo se usa el analizador local.";
+            "Ayuda exterior (A.E.) no configurada: sólo se usa el " +
+            "analizador local.";
         }
       }
     } catch (e) {
@@ -1843,6 +1915,36 @@
           if (guardada) campoVerdad.value = guardada;
         }
       }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Resplandor RGB que sigue al ratón                                  */
+  /* ------------------------------------------------------------------ */
+  const resplandor = $("#cursor-glow");
+  const punteroFino = window.matchMedia("(pointer: fine)");
+  const punteroGrueso = window.matchMedia("(any-pointer: coarse)");
+  if (resplandor && punteroFino.matches && !punteroGrueso.matches) {
+    let visible = false;
+
+    document.addEventListener("pointermove", (evento) => {
+      // En pantallas táctiles no se hace nada.
+      if (evento.pointerType && evento.pointerType !== "mouse") return;
+      resplandor.style.setProperty("--mx", evento.clientX + "px");
+      resplandor.style.setProperty("--my", evento.clientY + "px");
+      if (!visible) {
+        visible = true;
+        resplandor.classList.add("cursor-glow--activo");
+      }
+    }, { passive: true });
+
+    document.addEventListener("pointerleave", () => {
+      visible = false;
+      resplandor.classList.remove("cursor-glow--activo");
+    });
+    window.addEventListener("blur", () => {
+      visible = false;
+      resplandor.classList.remove("cursor-glow--activo");
     });
   }
 

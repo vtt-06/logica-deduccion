@@ -268,7 +268,7 @@ def main(argv):
             if fuentes[i] == "aprendida":
                 nota = "  (aprendida)"
             elif fuentes[i] == "ia":
-                nota = "  (IA)"
+                nota = "  (A.E.)"
             print("  %-11s %s%s" % (etiqueta, render(f), nota))
         print("  %-11s \"%s\"" % ("", fr))
     print()

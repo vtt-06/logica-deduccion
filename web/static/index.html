@@ -11,6 +11,8 @@
 <body>
   <a class="saltar" href="#entrada">Ir al formulario</a>
 
+  <div id="cursor-glow" class="cursor-glow" aria-hidden="true"></div>
+
   <div class="accesos-laterales">
     <button type="button" id="btn-definiciones"
             class="acceso-lateral acceso-lateral--definiciones"
@@ -188,36 +190,50 @@
     <!-- ================= PASO 2 ================= -->
     <section id="formalizacion" class="tarjeta" aria-labelledby="titulo-formal"
              hidden>
-      <div class="tarjeta__cabecera">
-        <h2 id="titulo-formal">2. Revisa la formalización</h2>
-        <p>
-          Esta es la propuesta. Puedes corregir cualquier fórmula antes de
-          deducir; se aceptan <code>¬ ∧ ∨ → ↔</code> y
-          <code>(Λx)</code>, <code>(Vx)</code>.
-        </p>
+      <div class="tarjeta__cabecera tarjeta__cabecera--accion">
+        <div>
+          <h2 id="titulo-formal">2. Revisa la formalización</h2>
+          <p>
+            Esta es la propuesta. Puedes corregir cualquier fórmula antes de
+            deducir; se aceptan <code>¬ ∧ ∨ → ↔</code> y
+            <code>(Λx)</code>, <code>(Vx)</code>.
+          </p>
+        </div>
+        <button type="button" id="btn-reformalizar"
+                class="boton boton--secundario boton--cabecera"
+                title="Vuelve al paso 1 para cambiar el texto. No borra la formalización ni la deducción.">
+          Editar las frases
+        </button>
       </div>
-      <div id="lista-formulas" class="formulas"></div>
 
-      <details class="vocabulario">
-        <summary>Vocabulario sugerido <span>(opcional)</span></summary>
-        <p class="vocabulario__texto">
-          Sólo se usa para que las explicaciones sean más legibles. Puedes
-          dejar los textos que aparecen.
-        </p>
+      <section class="vocabulario" aria-labelledby="titulo-vocabulario">
+        <div class="vocabulario__cabecera">
+          <h3 id="titulo-vocabulario">Alfabeto y vocabulario</h3>
+          <p class="vocabulario__texto">
+            Las letras se asignan por orden alfabético a partir de la
+            <code>p</code>. Los textos sólo sirven para que las explicaciones
+            sean más legibles; puedes cambiarlos.
+          </p>
+        </div>
         <div id="lista-vocabulario" class="vocabulario__lista"></div>
-      </details>
+        <div class="vocabulario__alfabeto">
+          <p class="vocabulario__alfabeto-titulo">Alfabeto disponible</p>
+          <div id="alfabeto-letras" class="vocabulario__letras"
+               aria-label="Letras disponibles"></div>
+          <p id="alfabeto-nota" class="vocabulario__nota"></p>
+        </div>
+      </section>
+
+      <div id="lista-formulas" class="formulas"></div>
 
       <div class="acciones">
         <button type="button" id="btn-deducir" class="boton boton--principal">
           <span class="boton__texto">Deducir</span>
           <span class="boton__cargando" hidden>Buscando…</span>
         </button>
-        <button type="button" id="btn-reformalizar" class="boton boton--secundario">
-          Volver a formalizar
-        </button>
         <button type="button" id="btn-consultar-ia"
                 class="boton boton--fantasma" hidden>
-          <span class="boton__texto">Consultar IA</span>
+          <span class="boton__texto">Ayuda exterior (A.E.)</span>
           <span class="boton__cargando" hidden>Consultando…</span>
         </button>
       </div>
@@ -330,7 +346,7 @@
               puntos.</li>
             <li>Si una frase aparece con un aviso naranja, el analizador la ha
               tratado como átomo pero puede tener estructura lógica: revisa la
-              fórmula o pulsa «Consultar IA».</li>
+              fórmula o pide ayuda exterior (A.E.).</li>
             <li>Si no aparece la deducción, revisa primero la formalización.</li>
             <li>Las explicaciones usan los números de línea de la prueba.</li>
           </ul>
@@ -347,7 +363,8 @@
           <p class="aprendizaje__privacidad">
             La memoria es local. Si el servidor tiene una IA configurada, las
             frases dudosas y los resúmenes de búsqueda se envían a ese
-            servicio; las fórmulas propuestas se marcan como «IA».
+            servicio; las fórmulas propuestas se marcan como «A.E.»
+            (ayuda exterior).
           </p>
           <p id="estado-ia" class="aprendizaje__privacidad"></p>
         </div>
@@ -358,11 +375,6 @@
         </div>
       </div>
     </section>
-
-    <p class="nota-red">
-      Para abrirlo desde el móvil o la tablet, usa la dirección
-      <code>http://IP-del-ordenador:8000</code> estando en la misma red WiFi.
-    </p>
   </main>
 
   <!-- ================= MENÚ SECUNDARIO: DEFINICIONES ================= -->
@@ -594,7 +606,7 @@
 
             <article class="definicion">
               <h4 class="definicion__titulo">
-                <span class="definicion__numero">2.0.3</span> Conjunto adecuado de conectivas
+                <span class="definicion__numero">2.1.0</span> Conjunto adecuado de conectivas
               </h4>
               <div class="definicion__texto">
                 <p>Un conjunto adecuado de conectivas es un conjunto tal que
@@ -2218,9 +2230,8 @@ meta: (Λx)(H(x)→¬A(x))</pre>
   </div>
 
   <footer class="pie">
-    <p>Lógica · deducción asistida — hecha para el curso. El aprendizaje se guarda en tu ordenador; por defecto no se envía nada a internet.</p>
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">Lógica · v2.0.3</span>
+      <span id="version-texto" class="version-texto">Lógica · v2.1.0</span>
     </div>
   </footer>
 

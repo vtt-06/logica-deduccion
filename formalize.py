@@ -21,6 +21,19 @@ from formulas import F, atoms, parse_formula, render
 ATOM_LETTERS = "pqrstuvwxyz"
 
 
+def _letra_enunciado(indice):
+    """Letra para el enunciado número `indice` (empezando en 0).
+
+    Se empieza en la p y se sigue el abecedario.  Si un ejercicio agota la
+    z, se continúa con aa, ab, ac… para no reutilizar letras ni mezclar dos
+    premisas en un mismo átomo.
+    """
+    if indice < len(ATOM_LETTERS):
+        return ATOM_LETTERS[indice]
+    resto = indice - len(ATOM_LETTERS)
+    return chr(ord("a") + resto // 26) + chr(ord("a") + resto % 26)
+
+
 class Term:
     """Un sintagma del vocabulario: nombre interno y texto del enunciado."""
 
@@ -858,8 +871,7 @@ class Vocabulary:
         if self.quantified:
             letter = self._next_predicate_letter()
         else:
-            letter = ATOM_LETTERS[len(self.terms)] if len(self.terms) < len(
-                ATOM_LETTERS) else "p%d" % (len(self.terms) + 1)
+            letter = _letra_enunciado(len(self.terms))
         t = Term(letter, text, negated_text)
         self.terms.append(t)
         for clave in claves:

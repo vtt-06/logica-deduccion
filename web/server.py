@@ -242,18 +242,21 @@ def api_formalizar(data):
                 vocab = _vocab_con_textos(nuevas, propuesta.get("vocab") or {},
                                           form, quantified)
             elif forzar_ia:
-                aviso_ia = ("La IA no ha devuelto fórmulas válidas; se mantiene "
-                            "la formalización local. Revísala o corrígela a mano.")
+                aviso_ia = ("La ayuda exterior (A.E.) no ha devuelto fórmulas "
+                            "válidas; se mantiene la formalización local. "
+                            "Revísala o corrígela a mano.")
             elif indices_ia:
-                aviso_ia = ("La IA no ha devuelto fórmulas válidas para las "
-                            "frases marcadas; se mantiene la formalización local.")
+                aviso_ia = ("La ayuda exterior (A.E.) no ha devuelto fórmulas "
+                            "válidas para las frases marcadas; se mantiene la "
+                            "formalización local.")
         elif forzar_ia:
-            aviso_ia = ("No se ha podido consultar la IA. Se mantiene la "
-                        "formalización local; revisa la conexión o la clave.")
+            aviso_ia = ("No se ha podido consultar la ayuda exterior (A.E.). "
+                        "Se mantiene la formalización local; revisa la conexión "
+                        "o la clave.")
         elif indices_ia:
-            aviso_ia = ("No se ha podido consultar la IA para las frases "
-                        "marcadas; se mantiene la formalización local. "
-                        "Puedes corregirlas a mano.")
+            aviso_ia = ("No se ha podido consultar la ayuda exterior (A.E.) "
+                        "para las frases marcadas; se mantiene la formalización "
+                        "local. Puedes corregirlas a mano.")
 
     return {"ok": True, "items": items, "vocab": vocab,
             "ia_aplicada": ia_aplicada, "aviso_ia": aviso_ia,
