@@ -921,6 +921,11 @@ def api_deducir(data):
 
     vistas = _vistas_de_prueba(lines)
     plain = formato_libro(lines)
+    if vocab is not None:
+        # La memoria debe guardar el vocabulario nuevo, no el de la propuesta
+        # que no permitía deducir.
+        data["vocab"] = {v["letter"]: v["text"] for v in vocab
+                         if v.get("text")}
     aprendido = _registrar_confirmadas(data, list(premisas) + [meta])
     _registrar_ejercicio(data, premisas, meta, vistas, plain,
                          correcciones, aviso_variante)
