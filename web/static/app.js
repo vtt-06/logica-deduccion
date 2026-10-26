@@ -718,6 +718,8 @@
       marcarPaso(1, "hecho");
       marcarPaso(2, "activo");
       marcarPaso(3, "");
+      invalidarMemoria();
+      if (data.banco_guardadas) actualizarAprendizaje();
       irA($("#formalizacion"));
       return true;
     } catch (error) {
@@ -996,18 +998,20 @@
       const exactas = datos.exactas || 0;
       const plantillas = datos.plantillas || 0;
       const ejercicios = datos.ejercicios || 0;
-      if (!exactas && !plantillas && !ejercicios) {
+      const banco = datos.banco || 0;
+      const frasesVisibles = banco || exactas;
+      if (!frasesVisibles && !plantillas && !ejercicios) {
         textoAprendizaje.textContent =
-          "Todavía no hay frases guardadas. Al deducir un ejercicio se " +
-          "recordará para la próxima vez.";
+          "Todavía no hay frases guardadas. Cada frase que formalices se " +
+          "guardará automáticamente en el banco.";
       } else {
-        const frases = exactas === 1 ? "1 frase" : exactas + " frases";
+        const frases = frasesVisibles === 1 ? "1 frase" : frasesVisibles + " frases";
         const patrones = plantillas === 1 ? "1 patrón" : plantillas + " patrones";
         const completos = ejercicios === 1 ? "1 ejercicio completo"
           : ejercicios + " ejercicios completos";
         textoAprendizaje.textContent =
           "Guardadas " + frases + ", " + patrones + " de imitación y " +
-          completos + ". Pulsa «Ver memoria de frases» para revisarlos.";
+          completos + ". Pulsa «Ver memoria de frases» para revisarlas.";
       }
       const estadoIA = $("#estado-ia");
       if (estadoIA) {
@@ -1439,6 +1443,7 @@
     cargado: false,
     ejercicios: [],
     frases: [],
+    banco: [],
     seleccion: null,
   };
   let menuMemoriaControl = null;
@@ -1470,7 +1475,7 @@
   function marcarMemoriaActiva(id) {
     memoriaItems.querySelectorAll(".memoria__item").forEach((item) => {
       item.classList.toggle("activo", item.dataset.memoriaId === id ||
-        item.dataset.fraseId === id);
+        item.dataset.fraseId === id || item.dataset.bancoId === id);
     });
   }
 
@@ -1490,6 +1495,7 @@
       if (!datos.ok) throw new Error(datos.error || "No se pudo leer la memoria.");
       memoriaEstado.ejercicios = datos.ejercicios || [];
       memoriaEstado.frases = datos.frases || [];
+      memoriaEstado.banco = datos.banco || [];
       memoriaEstado.cargado = true;
       renderMemoriaLista();
     } catch (error) {
@@ -1505,17 +1511,30 @@
     memoriaItems.textContent = "";
     const ejercicios = memoriaEstado.ejercicios;
     const frases = memoriaEstado.frases;
-    if (!ejercicios.length && !frases.length) {
+    const banco = memoriaEstado.banco;
+    if (!ejercicios.length && !frases.length && !banco.length) {
       memoriaCuenta.textContent = "Sin frases guardadas";
       memoriaItems.append(crear("p", "memoria__vacio",
-        "Todavía no hay ejercicios guardados. Al deducir uno, aparecerá aquí " +
-        "con su formalización y su prueba."));
+        "Todavía no hay frases guardadas. Cada frase que formalices se " +
+        "guardará aquí automáticamente."));
       return;
     }
 
+    const totalFrases = banco.length || frases.length;
+    const partes = [];
+    if (totalFrases) {
+      partes.push(contarMemoria(totalFrases, "frase", "frases"));
+    }
     if (ejercicios.length) {
-      memoriaCuenta.textContent =
-        contarMemoria(ejercicios.length, "ejercicio", "ejercicios");
+      partes.push(contarMemoria(ejercicios.length, "ejercicio", "ejercicios"));
+    }
+    memoriaCuenta.textContent = partes.join(" · ");
+
+    // Las frases van primero: es el contenido que se genera solo al
+    // formalizar. Los ejercicios completos se muestran debajo.
+    const bloqueEjercicios = document.createDocumentFragment();
+    if (ejercicios.length) {
+      bloqueEjercicios.append(crear("p", "memoria__grupo", "Ejercicios deducidos"));
       ejercicios.forEach((ejercicio) => {
         const boton = crear("button", "memoria__item");
         boton.type = "button";
@@ -1531,37 +1550,83 @@
           crear("span", "memoria-item__formula", "⊢ " + ejercicio.meta)
         );
         boton.addEventListener("click", () => seleccionarEjercicio(ejercicio.id));
-        memoriaItems.append(boton);
+        bloqueEjercicios.append(boton);
       });
-      const id = memoriaEstado.seleccion;
-      if (id && ejercicios.some((e) => e.id === id)) {
-        marcarMemoriaActiva(id);
-      } else {
-        seleccionarEjercicio(ejercicios[0].id);
-      }
-      return;
     }
 
-    // Compatibilidad con memorias antiguas: frases sueltas sin ejercicio.
-    memoriaCuenta.textContent =
-      contarMemoria(frases.length, "frase guardada", "frases guardadas");
-    frases.forEach((frase, indice) => {
-      const boton = crear("button", "memoria__item");
-      boton.type = "button";
-      boton.dataset.fraseId = "frase-" + indice;
-      boton.append(
-        crear("span", "memoria-item__titulo", tituloMemoria(frase.texto)),
-        crear("span", "memoria-item__meta",
-          "Fórmula: " + frase.formula +
-          (frase.actualizado ? " · " + fechaMemoria(frase.actualizado) : "")),
-        crear("span", "memoria-item__formula", frase.formula)
-      );
-      boton.addEventListener("click", () => {
-        marcarMemoriaActiva("frase-" + indice);
-        renderDetalleFrase(frase);
+    if (banco.length) {
+      memoriaItems.append(crear("p", "memoria__grupo", "Frases guardadas"));
+      banco.forEach((frase, indice) => {
+        const boton = crear("button", "memoria__item");
+        boton.type = "button";
+        const idFrase = "banco-" + indice;
+        boton.dataset.bancoId = idFrase;
+        boton.append(
+          crear("span", "memoria-item__titulo", tituloMemoria(frase.texto)),
+          crear("span", "memoria-item__meta",
+            "Fórmula: " + frase.formula +
+            (frase.usos > 1 ? " · " + frase.usos + " veces" : "") +
+            (frase.actualizado ? " · " + fechaMemoria(frase.actualizado) : "")),
+          crear("span", "memoria-item__formula", frase.formula)
+        );
+        boton.addEventListener("click", () => {
+          memoriaEstado.seleccion = idFrase;
+          marcarMemoriaActiva(idFrase);
+          renderDetalleFrase(frase, true);
+        });
+        memoriaItems.append(boton);
       });
-      memoriaItems.append(boton);
-    });
+    } else if (frases.length) {
+      // Compatibilidad con memorias antiguas: frases sueltas sin ejercicio.
+      memoriaItems.append(crear("p", "memoria__grupo", "Frases guardadas"));
+      frases.forEach((frase, indice) => {
+        const boton = crear("button", "memoria__item");
+        boton.type = "button";
+        const idFrase = "frase-" + indice;
+        boton.dataset.fraseId = idFrase;
+        boton.append(
+          crear("span", "memoria-item__titulo", tituloMemoria(frase.texto)),
+          crear("span", "memoria-item__meta",
+            "Fórmula: " + frase.formula +
+            (frase.actualizado ? " · " + fechaMemoria(frase.actualizado) : "")),
+          crear("span", "memoria-item__formula", frase.formula)
+        );
+        boton.addEventListener("click", () => {
+          memoriaEstado.seleccion = idFrase;
+          marcarMemoriaActiva(idFrase);
+          renderDetalleFrase(frase);
+        });
+        memoriaItems.append(boton);
+      });
+    }
+
+    memoriaItems.append(bloqueEjercicios);
+
+    // Mantener la selección actual si sigue existiendo; si no, abrir la
+    // primera frase y, si no hay banco, el primer ejercicio disponible.
+    const id = memoriaEstado.seleccion;
+    const indiceBanco = typeof id === "string" && id.startsWith("banco-")
+      ? Number(id.slice("banco-".length)) : -1;
+    if (indiceBanco >= 0 && banco[indiceBanco]) {
+      marcarMemoriaActiva(id);
+      renderDetalleFrase(banco[indiceBanco], true);
+      return;
+    }
+    if (id && ejercicios.some((e) => e.id === id)) {
+      marcarMemoriaActiva(id);
+      return;
+    }
+    if (banco.length) {
+      memoriaEstado.seleccion = "banco-0";
+      marcarMemoriaActiva("banco-0");
+      renderDetalleFrase(banco[0], true);
+      return;
+    }
+    if (ejercicios.length) {
+      seleccionarEjercicio(ejercicios[0].id);
+      return;
+    }
+    memoriaEstado.seleccion = "frase-0";
     marcarMemoriaActiva("frase-0");
     renderDetalleFrase(frases[0]);
   }
@@ -1686,16 +1751,20 @@
     memoriaDetalle.append(acciones);
   }
 
-  function renderDetalleFrase(frase) {
+  function renderDetalleFrase(frase, esBanco = false) {
     memoriaDetalle.textContent = "";
     memoriaDetalle.append(crear("h3", null,
       tituloMemoria(frase.texto) || "Frase guardada"));
     memoriaDetalle.append(crear("p", "memoria__detalle-meta",
       "Fórmula: " + (frase.formula || "") +
+      (frase.usos > 1 ? " · " + frase.usos + " veces" : "") +
       (frase.actualizado ? " · " + fechaMemoria(frase.actualizado) : "")));
     memoriaDetalle.append(crear("p", "memoria__vacio",
-      "Esta frase se guardó antes de que la memoria almacenara ejercicios " +
-      "completos. Vuelve a deducirla para ver aquí su prueba."));
+      esBanco
+        ? "Esta frase se guardó automáticamente al formalizarla. Puedes " +
+          "cargarla en el editor para corregirla o deducir el ejercicio."
+        : "Esta frase se guardó antes de que la memoria almacenara " +
+          "ejercicios completos. Vuelve a deducirla para ver aquí su prueba."));
 
     const bloqueVocab = bloqueMemoria("Vocabulario");
     const vocab = Object.entries(frase.vocab || {});

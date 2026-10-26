@@ -31,6 +31,7 @@ LIMITE_EXACTAS = 1500
 LIMITE_PLANTILLAS = 400
 LIMITE_EJERCICIOS = 300
 LIMITE_FRASES_MEMORIA = 500
+LIMITE_BANCO = 2000
 
 # Palabras que no deben quedar dentro de un hueco: si aparecen, la frase
 # necesita el analizador (negaciones, conectivas, cuantificadores...) y no
@@ -136,7 +137,7 @@ class Aprendizaje:
                      or RUTA_POR_DEFECTO)
         self._lock = threading.RLock()
         self.datos = {"version": 1, "exactas": {}, "plantillas": [],
-                      "ejercicios": []}
+                      "ejercicios": [], "banco": []}
         self._cargar()
 
     # -- persistencia ------------------------------------------------------
@@ -151,10 +152,22 @@ class Aprendizaje:
         exactas = datos.get("exactas")
         plantillas = datos.get("plantillas")
         ejercicios = datos.get("ejercicios")
+        banco = datos.get("banco")
         if isinstance(plantillas, list):
             self.datos["plantillas"] = plantillas
         if isinstance(ejercicios, list):
             self.datos["ejercicios"] = ejercicios
+        cambio_banco = False
+        if isinstance(banco, list):
+            for entrada in banco:
+                if not isinstance(entrada, dict):
+                    continue
+                limpio = re.sub(r"^=>\s*", "",
+                                str(entrada.get("texto", ""))).strip()
+                if limpio != entrada.get("texto", ""):
+                    entrada["texto"] = limpio
+                    cambio_banco = True
+            self.datos["banco"] = banco
         if isinstance(exactas, dict):
             # Migración suave: versiones anteriores guardaban la conclusión
             # con el marcador «Por tanto, …», que luego no coincidía con la
@@ -179,6 +192,8 @@ class Aprendizaje:
             self.datos["exactas"] = migradas
             if cambio:
                 self._guardar()
+        if cambio_banco:
+            self._guardar()
 
     def _guardar(self):
         try:
@@ -272,6 +287,59 @@ class Aprendizaje:
                                               tipo_calculo, ahora)
             if plantilla:
                 self._insertar_plantilla(plantilla)
+            self._guardar()
+        return True
+
+    def registrar_frase(self, frase, formula, vocab=None, cuantificado=False,
+                        fuente=""):
+        """Añade una frase al banco visible, sin usarla para aprender.
+
+        Se llama en cuanto se formaliza una frase, aunque la deducción no
+        llegue a completarse.  Así el banco de frases nunca aparece vacío
+        después de usar la aplicación.  Es un registro de consulta: no
+        interviene en la reutilización automática de fórmulas.
+        """
+        texto = " ".join(str(frase or "").split()).strip()
+        texto = re.sub(r"^=>\s*", "", texto).strip()
+        formula = str(formula or "").strip()
+        if not texto or not formula:
+            return False
+        clave = _clave(texto)
+        if not clave:
+            return False
+        tipo_calculo = "pred" if cuantificado else "prop"
+        ahora = datetime.now().isoformat(timespec="seconds")
+        vocabulario = {}
+        if isinstance(vocab, dict):
+            for letra, descripcion in vocab.items():
+                descripcion = str(descripcion or "").strip()
+                if descripcion:
+                    vocabulario[str(letra)] = descripcion
+        registro = {
+            "texto": texto,
+            "formula": formula,
+            "vocab": vocabulario,
+            "calculus": tipo_calculo,
+            "fuente": str(fuente or ""),
+            "actualizado": ahora,
+        }
+        with self._lock:
+            for i, anterior in enumerate(self.datos["banco"]):
+                if not isinstance(anterior, dict):
+                    continue
+                if (anterior.get("calculus") == tipo_calculo and
+                        _clave(str(anterior.get("texto", ""))) == clave):
+                    registro["usos"] = int(anterior.get("usos", 0)) + 1
+                    registro["primera_vez"] = anterior.get(
+                        "primera_vez", anterior.get("actualizado", ahora))
+                    self.datos["banco"][i] = registro
+                    self._guardar()
+                    return True
+            registro["usos"] = 1
+            registro["primera_vez"] = ahora
+            self.datos["banco"].insert(0, registro)
+            if len(self.datos["banco"]) > LIMITE_BANCO:
+                del self.datos["banco"][LIMITE_BANCO:]
             self._guardar()
         return True
 
@@ -445,7 +513,25 @@ class Aprendizaje:
                 })
                 if len(frases) >= LIMITE_FRASES_MEMORIA:
                     break
-            return {"ejercicios": ejercicios, "frases": frases}
+            banco = []
+            for valor in sorted(self.datos["banco"],
+                                key=lambda v: str(v.get("actualizado", "")),
+                                reverse=True):
+                if not isinstance(valor, dict):
+                    continue
+                texto = re.sub(r"^=>\s*", "",
+                               str(valor.get("texto", ""))).strip()
+                banco.append({
+                    "texto": texto,
+                    "formula": valor.get("formula", ""),
+                    "vocab": dict(valor.get("vocab") or {}),
+                    "calculus": valor.get("calculus", "prop"),
+                    "fuente": valor.get("fuente", ""),
+                    "usos": int(valor.get("usos", 0)),
+                    "actualizado": valor.get("actualizado", ""),
+                })
+            return {"ejercicios": ejercicios, "frases": frases,
+                    "banco": banco}
 
     def obtener_ejercicio(self, identificador):
         with self._lock:
@@ -461,12 +547,13 @@ class Aprendizaje:
                 "exactas": len(self.datos["exactas"]),
                 "plantillas": len(self.datos["plantillas"]),
                 "ejercicios": len(self.datos["ejercicios"]),
+                "banco": len(self.datos["banco"]),
             }
 
     def olvidar(self):
         with self._lock:
             self.datos = {"version": 1, "exactas": {}, "plantillas": [],
-                          "ejercicios": []}
+                          "ejercicios": [], "banco": []}
             try:
                 if os.path.exists(self.ruta):
                     os.remove(self.ruta)

@@ -357,14 +357,16 @@
         <div>
           <h3>Memoria de frases</h3>
           <p id="texto-aprendizaje">
-            Cada ejercicio que deduces se guarda en este ordenador para
-            reconocer frases parecidas la próxima vez.
+            Cada frase que formalizas se guarda automáticamente en el banco
+            de frases. Los ejercicios que deduces también se guardan completos
+            para reconocer frases parecidas la próxima vez.
           </p>
           <p class="aprendizaje__privacidad">
-            La memoria es local. Si el servidor tiene una IA configurada, las
-            frases dudosas y los resúmenes de búsqueda se envían a ese
-            servicio; las fórmulas propuestas se marcan como «A.E.»
-            (ayuda exterior).
+            En la versión pública, el banco es compartido: otras personas que
+            usen la web pueden ver las frases guardadas. No escribas datos
+            personales. Si el servidor tiene una IA configurada, las frases
+            dudosas y los resúmenes de búsqueda se envían a ese servicio; las
+            fórmulas propuestas se marcan como «A.E.» (ayuda exterior).
           </p>
           <p id="estado-ia" class="aprendizaje__privacidad"></p>
         </div>
@@ -606,7 +608,7 @@
 
             <article class="definicion">
               <h4 class="definicion__titulo">
-                <span class="definicion__numero">2.1.0</span> Conjunto adecuado de conectivas
+                <span class="definicion__numero">2.1.1</span> Conjunto adecuado de conectivas
               </h4>
               <div class="definicion__texto">
                 <p>Un conjunto adecuado de conectivas es un conjunto tal que
@@ -2109,12 +2111,12 @@ meta: (Λx)(H(x)→¬A(x))</pre>
     <div class="menu-teoria__panel">
       <header class="menu-teoria__cabecera">
         <div>
-          <p class="menu-teoria__etiqueta">Tu historial local</p>
+          <p class="menu-teoria__etiqueta">Banco de frases</p>
           <h2 id="titulo-menu-memoria">Memoria de frases</h2>
           <p class="menu-teoria__intro">
-            Aquí están los ejercicios que has deducido. Pulsa en uno para ver
-            sus frases, la formalización, el vocabulario y la deducción
-            completa.
+            Aquí se guarda automáticamente cada frase que formalizas, junto con
+            los ejercicios que deduces. Pulsa en una frase para ver su fórmula
+            o en un ejercicio para revisar su formalización y su deducción.
           </p>
         </div>
         <button type="button" id="btn-cerrar-memoria"
@@ -2124,7 +2126,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
       </header>
 
       <div class="menu-teoria__cuerpo memoria__cuerpo">
-        <aside class="memoria__lista" aria-label="Ejercicios guardados">
+        <aside class="memoria__lista" aria-label="Frases y ejercicios guardados">
           <div class="memoria__lista-cabecera">
             <p id="memoria-cuenta" class="memoria__cuenta">Cargando…</p>
             <button type="button" id="btn-recargar-memoria"
@@ -2138,8 +2140,8 @@ meta: (Λx)(H(x)→¬A(x))</pre>
         <div id="memoria-detalle"
              class="teoria-seccion memoria__detalle" aria-live="polite">
           <p class="memoria__vacio">
-            Elige un ejercicio de la lista para ver su formalización y su
-            deducción.
+            Elige una frase para ver su fórmula o un ejercicio para revisar su
+            formalización y su deducción.
           </p>
         </div>
       </div>
@@ -2231,7 +2233,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
 
   <footer class="pie">
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">Lógica · v2.1.0</span>
+      <span id="version-texto" class="version-texto">Lógica · v2.1.1</span>
     </div>
   </footer>
 

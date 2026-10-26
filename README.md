@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.0.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.1.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -249,8 +249,9 @@ no añade dependencias al servidor. Limitaciones:
 
 ### Aprendizaje local
 
-Cada ejercicio que se deduce bien se guarda en `aprendizaje.json`, en la misma
-carpeta del programa. La próxima vez:
+Cada frase que se formaliza se guarda automáticamente en el **banco de
+frases** de `aprendizaje.json`, aunque la deducción no llegue a completarse.
+Además, cada ejercicio que se deduce bien se guarda completo. La próxima vez:
 
 - Si la frase es **exacta**, se recupera su fórmula (aparece marcada como
   «aprendida»).
@@ -259,19 +260,24 @@ carpeta del programa. La próxima vez:
   Por ejemplo, de «En tanto llueva, me mojo» con fórmula `p→q` se aprende la
   plantilla `en tanto §, §`, que sirve para «En tanto nieva, me abrigo».
 
-Además de las frases sueltas, se guarda cada **ejercicio completo** (frases,
-formalización, vocabulario y deducción). El botón **«Ver memoria de frases»**,
-situado al final de la página, abre un menú con todos los ejercicios
-guardados. Al pulsar en uno se muestra su formalización, su vocabulario, la
-prueba línea a línea, la explicación de cada paso y el texto de la deducción.
-Desde ahí también se puede cargar el ejercicio en el editor para repetirlo.
+El botón **«Ver memoria de frases»**, situado al final de la página, abre un
+menú con el banco de frases y los ejercicios guardados. Al pulsar en una frase
+se muestra su fórmula y su vocabulario; al pulsar en un ejercicio se muestra
+su formalización, su vocabulario, la prueba línea a línea, la explicación de
+cada paso y el texto de la deducción. Desde ahí también se puede cargar en el
+editor para repetirlo.
 
 Los ejercicios que se guardaron antes de existir esta memoria completa sólo
 tenían frases sueltas. La aplicación los agrupa por el momento en que se
 dedujeron y reconstruye su deducción a partir de las fórmulas guardadas cuando
 es posible; aparecen marcados como «Recuperado».
 
-La memoria es local y se puede borrar desde la terminal:
+La memoria es local cuando se ejecuta en tu ordenador. En la versión pública
+de Render es compartida entre los visitantes del servicio y se guarda en el
+almacenamiento efímero de la instancia: se conserva mientras el servicio no se
+redespliegue ni se reinicie. Para conservarla de forma permanente hace falta un
+disco persistente o una base de datos externa. Se puede borrar desde la
+terminal:
 
 ```bash
 python3 main.py --olvidar        # borra las frases recordadas

@@ -2012,6 +2012,15 @@ body.menu-lateral-abierto { overflow: hidden; }
   overflow-y: auto;
   padding-right: 0.15rem;
 }
+.memoria__grupo {
+  margin: 0.7rem 0 0.1rem;
+  color: var(--gris);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+.memoria__grupo:first-child { margin-top: 0; }
 .memoria__item {
   display: grid;
   gap: 0.18rem;

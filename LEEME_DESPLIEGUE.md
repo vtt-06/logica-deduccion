@@ -20,10 +20,13 @@ No subas:
 3. Render leerá `render.yaml` y usará:
    - Build command: `pip install -r requirements.txt`
    - Start command: `python3 web/server.py`
-4. La variable `LOGICA_APRENDIZAJE=0` desactiva la memoria compartida. Si
-   quieres activarla, cámbiala a `1`, pero ten en cuenta que todos los
-   visitantes compartirán el mismo archivo y que Render puede borrarlo al
-   reiniciar.
+4. `render.yaml` activa la memoria con `LOGICA_APRENDIZAJE=1`. Esto guarda
+   automáticamente cada frase formalizada en el banco de frases. Ten en cuenta
+   que todos los visitantes comparten el mismo archivo y que, en el plan
+   gratuito, Render puede borrarlo al reiniciar o redesplegar. Para conservarlo
+   hace falta un disco persistente o una base de datos externa.
+   Si el servicio ya existía con `LOGICA_APRENDIZAJE=0`, cambia esa variable en
+   **Environment** del panel de Render y vuelve a desplegar.
 5. Pulsa **Deploy**. La dirección será parecida a
    `https://logica-deduccion.onrender.com`.
 

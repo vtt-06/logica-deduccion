@@ -258,9 +258,11 @@ def api_formalizar(data):
                         "para las frases marcadas; se mantiene la formalización "
                         "local. Puedes corregirlas a mano.")
 
+    banco_guardadas = _registrar_banco_frases(items, vocab, quantified)
+
     return {"ok": True, "items": items, "vocab": vocab,
             "ia_aplicada": ia_aplicada, "aviso_ia": aviso_ia,
-            "motivo_ia": motivo_ia,
+            "motivo_ia": motivo_ia, "banco_guardadas": banco_guardadas,
             "calculus": "pred" if quantified else "prop"}
 
 
@@ -455,6 +457,41 @@ def _registrar_confirmadas(data, formulas):
             continue
         if APRENDIZAJE.guardar(str(frase), render(formula), textos,
                                cuantificado):
+            guardadas += 1
+    return guardadas
+
+
+def _registrar_banco_frases(items, vocab, cuantificado):
+    """Guarda en el banco cada frase que tenga una fórmula válida.
+
+    No exige que la deducción se complete ni que el vocabulario sea perfecto:
+    el banco es un registro de consulta, no la memoria que reutiliza fórmulas.
+    """
+    if APRENDIZAJE is None:
+        return 0
+    textos = {}
+    if isinstance(vocab, list):
+        for entrada in vocab:
+            if not isinstance(entrada, dict):
+                continue
+            letra = str(entrada.get("letter", "")).strip()
+            descripcion = str(entrada.get("text", "")).strip()
+            if letra and descripcion:
+                textos[letra] = descripcion
+    guardadas = 0
+    for item in items:
+        if not item.get("ok") or not item.get("formula"):
+            continue
+        try:
+            formula = parse_formula(item["formula"])
+        except Exception:
+            continue
+        letras = {a.data for a in atoms(formula)}
+        vocabulario = {letra: textos[letra] for letra in letras
+                       if letra in textos}
+        if APRENDIZAJE.registrar_frase(
+                item.get("text", ""), item["formula"], vocabulario,
+                cuantificado, item.get("source", "")):
             guardadas += 1
     return guardadas
 
