@@ -62,12 +62,15 @@ def _cargar_config_ia():
 _cargar_config_ia()
 
 def _memoria_activa():
-    """La memoria local sólo se activa donde tiene sentido.
+    """Indica si se reutilizan fórmulas aprendidas automáticamente.
 
-    - ``LOGICA_APRENDIZAJE=0`` la desactiva siempre.
+    - ``LOGICA_APRENDIZAJE=0`` desactiva la reutilización.
     - ``LOGICA_APRENDIZAJE=1`` la activa siempre.
     - Sin variable, se desactiva en servidores públicos (Render define
-      ``RENDER``) para no compartir un mismo archivo entre visitantes.
+      ``RENDER``) para no reutilizar fórmulas de otras personas.
+
+    El banco visible de frases y los ejercicios guardados funcionan siempre,
+    aunque esta opción esté desactivada.
     """
     valor = os.environ.get("LOGICA_APRENDIZAJE", "").strip()
     if valor == "0":
@@ -77,9 +80,11 @@ def _memoria_activa():
     return not os.environ.get("RENDER")
 
 
-# Memoria compartida por todas las peticiones.  Es un JSON local: no sale
-# nada de este ordenador.
-APRENDIZAJE = Aprendizaje() if _memoria_activa() else None
+# Almacén compartido por todas las peticiones.  Guarda el banco de frases y
+# los ejercicios; sólo se usa para reutilizar fórmulas si el aprendizaje está
+# activo.
+MEMORIA = Aprendizaje()
+APRENDIZAJE = MEMORIA if _memoria_activa() else None
 
 
 # ==========================================================================
@@ -467,7 +472,7 @@ def _registrar_banco_frases(items, vocab, cuantificado):
     No exige que la deducción se complete ni que el vocabulario sea perfecto:
     el banco es un registro de consulta, no la memoria que reutiliza fórmulas.
     """
-    if APRENDIZAJE is None:
+    if MEMORIA is None:
         return 0
     textos = {}
     if isinstance(vocab, list):
@@ -489,7 +494,7 @@ def _registrar_banco_frases(items, vocab, cuantificado):
         letras = {a.data for a in atoms(formula)}
         vocabulario = {letra: textos[letra] for letra in letras
                        if letra in textos}
-        if APRENDIZAJE.registrar_frase(
+        if MEMORIA.registrar_frase(
                 item.get("text", ""), item["formula"], vocabulario,
                 cuantificado, item.get("source", "")):
             guardadas += 1
@@ -499,7 +504,7 @@ def _registrar_banco_frases(items, vocab, cuantificado):
 def _registrar_ejercicio(data, premisas, meta, vistas, plain,
                          correcciones=None, aviso_variante=""):
     """Guarda el ejercicio completo para poder revisarlo desde la memoria."""
-    if APRENDIZAJE is None:
+    if MEMORIA is None:
         return None
     frases = data.get("sentences")
     total = len(premisas) + 1
@@ -519,7 +524,7 @@ def _registrar_ejercicio(data, premisas, meta, vistas, plain,
             "role": "premisa" if i < len(premisas) else "conclusion",
         })
     try:
-        return APRENDIZAJE.guardar_ejercicio({
+        return MEMORIA.guardar_ejercicio({
             "frases": items,
             "vocab": {str(k): str(v) for k, v in vocab.items()},
             "meta": render(meta),
@@ -713,7 +718,7 @@ def _legado_sin_duplicar(datos):
     """Grupos antiguos que no forman ya parte de un ejercicio completo."""
     guardados = set()
     for resumen in datos.get("ejercicios", []):
-        ejercicio = APRENDIZAJE.obtener_ejercicio(resumen.get("id"))
+        ejercicio = MEMORIA.obtener_ejercicio(resumen.get("id"))
         if not ejercicio:
             continue
         for frase in ejercicio.get("frases", []):
@@ -792,30 +797,28 @@ def api_deducir(data):
 
 def api_memoria(consulta):
     """Lista o devuelve un ejercicio guardado en la memoria local."""
-    if APRENDIZAJE is None:
-        return {"ok": True, "activo": False,
-                "ejercicios": [], "frases": []}
     identificador = (consulta.get("id") or [""])[0]
     if identificador.startswith("legacy-"):
-        datos = APRENDIZAJE.listar_memoria()
+        datos = MEMORIA.listar_memoria()
         for fecha, frases in _legado_agrupado(datos):
             ejercicio = _detalle_legado(fecha, frases)
             if ejercicio and ejercicio["id"] == identificador:
                 return {"ok": True, "ejercicio": ejercicio}
         return {"ok": False, "error": "Ese ejercicio ya no está guardado."}
     if identificador:
-        ejercicio = APRENDIZAJE.obtener_ejercicio(identificador)
+        ejercicio = MEMORIA.obtener_ejercicio(identificador)
         if ejercicio is None:
             return {"ok": False, "error": "Ese ejercicio ya no está guardado."}
         return {"ok": True, "ejercicio": ejercicio}
-    datos = APRENDIZAJE.listar_memoria()
+    datos = MEMORIA.listar_memoria()
     for fecha, frases in _legado_sin_duplicar(datos):
         resumen = _resumen_legado(fecha, frases)
         if resumen:
             datos["ejercicios"].append(resumen)
     datos["ejercicios"].sort(
         key=lambda e: str(e.get("actualizado", "")), reverse=True)
-    return {"ok": True, "activo": True, **datos}
+    return {"ok": True, "activo": True,
+            "aprendizaje": APRENDIZAJE is not None, **datos}
 
 
 def api_tabla_verdad(data):
@@ -893,20 +896,13 @@ class Handler(BaseHTTPRequestHandler):
             self._json(api_memoria(parse_qs(urlparse(self.path).query)))
             return
         if ruta == "/api/aprendizaje":
-            if APRENDIZAJE is None:
-                self._json({"ok": True, "activo": False,
-                            "exactas": 0, "plantillas": 0,
-                            "version": VERSION,
-                            "ia": asistente_ia.configurado(),
-                            "busqueda": asistente_ia.busqueda_activa(),
-                            "modelo": os.environ.get("LOGICA_IA_MODEL", "")})
-            else:
-                datos = APRENDIZAJE.estadisticas()
-                self._json({"ok": True, "activo": True, **datos,
-                            "version": VERSION,
-                            "ia": asistente_ia.configurado(),
-                            "busqueda": asistente_ia.busqueda_activa(),
-                            "modelo": os.environ.get("LOGICA_IA_MODEL", "")})
+            datos = MEMORIA.estadisticas()
+            self._json({"ok": True, "activo": True,
+                        "aprendizaje": APRENDIZAJE is not None, **datos,
+                        "version": VERSION,
+                        "ia": asistente_ia.configurado(),
+                        "busqueda": asistente_ia.busqueda_activa(),
+                        "modelo": os.environ.get("LOGICA_IA_MODEL", "")})
             return
         self._estatico(ruta)
 

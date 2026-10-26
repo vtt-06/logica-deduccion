@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.1.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.2.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -276,8 +276,10 @@ La memoria es local cuando se ejecuta en tu ordenador. En la versión pública
 de Render es compartida entre los visitantes del servicio y se guarda en el
 almacenamiento efímero de la instancia: se conserva mientras el servicio no se
 redespliegue ni se reinicie. Para conservarla de forma permanente hace falta un
-disco persistente o una base de datos externa. Se puede borrar desde la
-terminal:
+disco persistente o una base de datos externa. La variable
+`LOGICA_APRENDIZAJE=0` desactiva únicamente la reutilización automática de
+fórmulas: el banco de frases y los ejercicios se siguen guardando y mostrando.
+Se puede borrar desde la terminal:
 
 ```bash
 python3 main.py --olvidar        # borra las frases recordadas

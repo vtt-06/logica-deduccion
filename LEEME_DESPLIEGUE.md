@@ -20,13 +20,12 @@ No subas:
 3. Render leerá `render.yaml` y usará:
    - Build command: `pip install -r requirements.txt`
    - Start command: `python3 web/server.py`
-4. `render.yaml` activa la memoria con `LOGICA_APRENDIZAJE=1`. Esto guarda
-   automáticamente cada frase formalizada en el banco de frases. Ten en cuenta
-   que todos los visitantes comparten el mismo archivo y que, en el plan
-   gratuito, Render puede borrarlo al reiniciar o redesplegar. Para conservarlo
-   hace falta un disco persistente o una base de datos externa.
-   Si el servicio ya existía con `LOGICA_APRENDIZAJE=0`, cambia esa variable en
-   **Environment** del panel de Render y vuelve a desplegar.
+4. `render.yaml` activa el aprendizaje con `LOGICA_APRENDIZAJE=1`. El banco de
+   frases se guarda siempre, incluso con `LOGICA_APRENDIZAJE=0`; esa variable
+   sólo controla la reutilización automática de fórmulas. Ten en cuenta que
+   todos los visitantes comparten el mismo archivo y que, en el plan gratuito,
+   Render puede borrarlo al reiniciar o redesplegar. Para conservarlo hace
+   falta un disco persistente o una base de datos externa.
 5. Pulsa **Deploy**. La dirección será parecida a
    `https://logica-deduccion.onrender.com`.
 
