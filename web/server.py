@@ -908,7 +908,13 @@ def api_deducir(data):
                          "premisas (revisa si falta alguna premisa, como el "
                          "antecedente de un condicional) o que haya que "
                          "corregir alguna fórmula.")
-                if ayuda and ayuda.get("aviso"):
+                if not asistente_ia.configurado():
+                    error += (" La ayuda exterior (A.E.) no está configurada "
+                              "en este servidor.")
+                elif ayuda is None:
+                    error += (" No se han recibido las frases originales para "
+                              "consultar la ayuda exterior (A.E.).")
+                elif ayuda.get("aviso"):
                     error += " " + ayuda["aviso"]
                 return {"ok": False, "error": error,
                         "ia_aplicada": False}
