@@ -225,32 +225,48 @@ code {
 /* Resplandor RGB que sigue al ratón (sólo con puntero fino) */
 .cursor-glow {
   position: fixed;
-  inset: 0;
+  left: var(--mx, -100px);
+  top: var(--my, -100px);
+  width: 26px;
+  height: 30px;
   z-index: 20;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.2s ease;
+  filter: hue-rotate(0deg);
+  animation: cursor-rgb 2.4s linear infinite;
+  will-change: left, top, filter;
 }
-.cursor-glow::before {
+.cursor-glow::before,
+.cursor-glow::after {
   content: "";
   position: absolute;
-  left: calc(var(--mx, -600px) - 230px);
-  top: calc(var(--my, -600px) - 230px);
-  width: 460px;
-  height: 460px;
-  border-radius: 50%;
-  background: radial-gradient(circle,
-    rgba(255, 0, 90, 0.18) 0%,
-    rgba(255, 176, 0, 0.15) 22%,
-    rgba(0, 214, 143, 0.13) 44%,
-    rgba(0, 140, 255, 0.11) 62%,
-    transparent 74%);
-  filter: blur(22px) saturate(150%);
-  animation: cursor-rgb 7s linear infinite;
+  inset: 0;
+  /* Silueta de puntero de ratón, con la punta en (0,0). */
+  clip-path: polygon(0 0, 0 72%, 20% 56%, 34% 86%, 48% 80%,
+    34% 52%, 59% 52%);
+  background: linear-gradient(135deg,
+    #ff003c 0%,
+    #ff7a00 18%,
+    #ffe600 34%,
+    #00ff66 52%,
+    #00c8ff 70%,
+    #7a00ff 86%,
+    #ff00c8 100%);
+}
+.cursor-glow::before {
+  transform: scale(1.55);
+  filter: blur(4px) saturate(280%);
+  opacity: 0.85;
+}
+.cursor-glow::after {
+  filter: saturate(300%)
+    drop-shadow(0 0 1px rgba(255, 255, 255, 0.95))
+    drop-shadow(0 0 4px rgba(255, 0, 140, 0.55));
 }
 .cursor-glow--activo { opacity: 1; }
 @keyframes cursor-rgb {
-  to { filter: blur(22px) saturate(150%) hue-rotate(360deg); }
+  to { filter: hue-rotate(360deg); }
 }
 @media (pointer: coarse), (hover: none), (prefers-reduced-motion: reduce) {
   .cursor-glow { display: none; }
