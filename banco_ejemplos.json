@@ -2,57 +2,165 @@
   {
     "texto": "Hoy estudio lógica.",
     "formula": "p",
-    "vocab": {"p": "Hoy estudio lógica"},
+    "vocab": {
+      "p": "Hoy estudio lógica"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Hoy apruebo lógica.",
     "formula": "q",
-    "vocab": {"q": "Hoy apruebo lógica"},
+    "vocab": {
+      "q": "Hoy apruebo lógica"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Hace sol.",
     "formula": "p",
-    "vocab": {"p": "hace sol"},
+    "vocab": {
+      "p": "hace sol"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Voy a la playa.",
     "formula": "q",
-    "vocab": {"q": "voy a la playa"},
+    "vocab": {
+      "q": "voy a la playa"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Si hace sol, voy a la playa.",
     "formula": "p→q",
-    "vocab": {"p": "hace sol", "q": "voy a la playa"},
+    "vocab": {
+      "p": "hace sol",
+      "q": "voy a la playa"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Llueve.",
     "formula": "p",
-    "vocab": {"p": "llueve"},
+    "vocab": {
+      "p": "llueve"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Si llueve, me mojo.",
     "formula": "p→q",
-    "vocab": {"p": "llueve", "q": "me mojo"},
+    "vocab": {
+      "p": "llueve",
+      "q": "me mojo"
+    },
     "calculus": "prop",
     "fuente": "ejemplo"
   },
   {
     "texto": "Me mojo.",
     "formula": "q",
-    "vocab": {"q": "me mojo"},
+    "vocab": {
+      "q": "me mojo"
+    },
     "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Un cuerpo indestructible existe si Dios puede y quiere crearlo.",
+    "formula": "q∧r→p",
+    "vocab": {
+      "p": "cuerpo indestructible existe",
+      "q": "Dios puede crearlo",
+      "r": "Dios quiere crearlo"
+    },
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Si Dios es todopoderoso, entonces no existe un cuerpo que sea indestructible.",
+    "formula": "s→¬p",
+    "vocab": {
+      "p": "cuerpo indestructible existe",
+      "s": "Dios es todopoderoso"
+    },
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Dios es todopoderoso y si quiere crear un cuerpo indestructible, puede hacerlo.",
+    "formula": "s∧(r→q)",
+    "vocab": {
+      "q": "Dios puede crearlo",
+      "r": "Dios quiere crearlo",
+      "s": "Dios es todopoderoso"
+    },
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Por consiguiente, no es el caso de que Dios quiera crear un cuerpo indestructible.",
+    "formula": "¬r",
+    "vocab": {
+      "r": "Dios quiere crearlo"
+    },
+    "calculus": "prop",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Todos los cuerpos geométricos son cubos a menos que sean dodecaedros o tetraedros.",
+    "formula": "(Λx)(¬C(x)→D(x)∨T(x))",
+    "vocab": {
+      "C": "ser cubos",
+      "D": "ser dodecaedros",
+      "T": "ser tetraedros"
+    },
+    "calculus": "pred",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Sólo los cuerpos geométricos grandes son tetraedros.",
+    "formula": "(Λx)(T(x)→G(x))",
+    "vocab": {
+      "T": "ser tetraedros",
+      "G": "ser grandes"
+    },
+    "calculus": "pred",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Algunos cuerpos geométricos son pequeños o medianos.",
+    "formula": "(Vx)¬G(x)",
+    "vocab": {
+      "G": "ser grandes"
+    },
+    "calculus": "pred",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Los cuerpos geométricos grandes no son pequeños o medianos.",
+    "formula": "(Λx)(G(x)→¬¬G(x))",
+    "vocab": {
+      "G": "ser grandes"
+    },
+    "calculus": "pred",
+    "fuente": "ejemplo"
+  },
+  {
+    "texto": "Por tanto, algunos cuerpos geométricos son cubos o dodecaedros.",
+    "formula": "(Vx)(C(x)∨D(x))",
+    "vocab": {
+      "C": "ser cubos",
+      "D": "ser dodecaedros"
+    },
+    "calculus": "pred",
     "fuente": "ejemplo"
   }
 ]

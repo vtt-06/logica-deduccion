@@ -859,7 +859,7 @@ class Vocabulary:
         self.terms = []
         self._index = {}
 
-    def add(self, text, negated_text=None):
+    def add(self, text, negated_text=None, letter=None):
         text = text.strip().strip(" .,;:")
         if self.quantified:
             existente = self.find(text)
@@ -868,11 +868,14 @@ class Vocabulary:
             claves = _claves_pred(text)
         else:
             claves = {_norm(text)}
-        if self.quantified:
-            letter = self._next_predicate_letter()
+        usadas = {t.letter for t in self.terms}
+        if letter and letter not in usadas:
+            elegida = letter
+        elif self.quantified:
+            elegida = self._next_predicate_letter()
         else:
-            letter = _letra_enunciado(len(self.terms))
-        t = Term(letter, text, negated_text)
+            elegida = _letra_enunciado(len(self.terms))
+        t = Term(elegida, text, negated_text)
         self.terms.append(t)
         for clave in claves:
             self._index.setdefault(clave, t)
@@ -1029,14 +1032,21 @@ class Formalyzer:
         for a in atoms(formula):
             if not vocab.get(a.data):
                 return None
+        # En una coincidencia exacta se conservan las letras originales: son
+        # las de la formalización de referencia del usuario.  Sólo se reasigna
+        # si esa letra ya está ocupada por otro enunciado.
+        exacta = datos.get("tipo") == "exacta"
         mapping = {}
         for a in atoms(formula):
             texto = vocab[a.data]
             termino = self.vocab.find(texto)
             if termino is None:
-                termino = self.vocab.add(texto)
+                termino = self.vocab.add(texto, letter=a.data if exacta else None)
             mapping[a.data] = termino.letter
-        return _simplifica(_remapea(formula, mapping))
+        resultado = _remapea(formula, mapping)
+        # En una coincidencia exacta se respeta tal cual la fórmula de
+        # referencia (por ejemplo, la doble negación del ejemplo de clase).
+        return resultado if exacta else _simplifica(resultado)
 
     def registrar(self, sentence, formula, textos=None):
         """Guarda una formalización confirmada para reutilizarla luego."""

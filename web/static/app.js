@@ -667,6 +667,11 @@
     aviso(avisoEntrada, "");
     const boton = forzarIA ? $("#btn-consultar-ia") : $("#btn-resolver");
     cargando(boton, true);
+    if (forzarIA) {
+      aviso(avisoFormal,
+        "Consultando la ayuda exterior (A.E.)… puede tardar hasta 40 segundos.",
+        "");
+    }
     const botonAEDeduccion = $("#btn-ayuda-deduccion");
     if (botonAEDeduccion) botonAEDeduccion.hidden = true;
     try {
@@ -867,6 +872,11 @@
     }
     const boton = forzarIA ? $("#btn-ayuda-deduccion") : $("#btn-deducir");
     if (mostrarCarga) cargando(boton, true);
+    if (forzarIA) {
+      aviso(avisoFormal,
+        "Consultando la ayuda exterior (A.E.)… puede tardar hasta 40 segundos.",
+        "");
+    }
     // No borrar el aviso verde de que se ha consultado la IA al deducir.
     if (!avisoFormal.classList.contains("aviso--ok")) {
       aviso(avisoFormal, "");

@@ -73,18 +73,13 @@ APRENDIZAJE = MEMORIA
 
 
 def _sembrar_banco():
-    """Rellena el banco con ejemplos la primera vez que está vacío.
+    """Añade al banco los ejemplos que falten.
 
     El almacenamiento de Render es efímero: al reiniciar el servicio se pierde
     ``aprendizaje.json``.  Sin esta semilla, el banco aparecería vacío en cada
-    arranque y parecería que no se guarda nada.  Sólo actúa si el banco está
-    vacío, así que nunca duplica ni pisa las frases de los visitantes.
+    arranque y parecería que no se guarda nada.  Las frases que ya existen no
+    se tocan: sólo se añaden las que falten, sin pisar correcciones del usuario.
     """
-    try:
-        if MEMORIA.estadisticas().get("banco"):
-            return 0
-    except Exception:
-        return 0
     ruta = RAIZ.parent / "banco_ejemplos.json"
     try:
         with ruta.open(encoding="utf-8") as fh:
@@ -98,6 +93,9 @@ def _sembrar_banco():
         if not isinstance(ejemplo, dict):
             continue
         try:
+            cuantificado = ejemplo.get("calculus") == "pred"
+            if MEMORIA.tiene_frase(ejemplo.get("texto", ""), cuantificado):
+                continue
             if MEMORIA.registrar_frase(
                     ejemplo.get("texto", ""), ejemplo.get("formula", ""),
                     ejemplo.get("vocab") or {},
@@ -203,26 +201,6 @@ def _unificar_atomos(items, formulas, form, quantified):
         return formulas, _sugerencias_vocabulario(form, formulas, quantified)
 
     nuevas = [_remapa_atomos(f, mapa) for f in formulas]
-
-    # Renumerar en orden de aparición (p, q, r…) evita huecos y deja el
-    # vocabulario limpio: las letras que usó el analizador frase a frase
-    # pueden ser p, r, s, q… tras unificar.
-    orden = []
-    for formula in nuevas:
-        for atomo in atoms(formula):
-            if atomo.data not in orden:
-                orden.append(atomo.data)
-    letras = []
-    for i in range(len(orden)):
-        if quantified:
-            letras.append("CDEFGHIJKLMNOPQRSTUVWXYZAB"[i]
-                          if i < 26 else "C" + str(i))
-        else:
-            letras.append(fz._letra_enunciado(i))
-    renumerado = dict(zip(orden, letras))
-    nuevas = [_remapa_atomos(f, renumerado) for f in nuevas]
-    textos = {renumerado[l]: textos[l] for l in orden if l in textos}
-
     for item, formula in zip(items, nuevas):
         item["formula"] = render(formula)
     return nuevas, _vocab_con_textos(nuevas, textos, None, quantified)
@@ -371,6 +349,11 @@ def api_formalizar(data):
             if validas and len(nuevas) == len(frases):
                 formulas = nuevas
                 ia_aplicada = True
+                if forzar_ia:
+                    aviso_ia = (
+                        "La ayuda exterior (A.E.) ha revisado las frases y ha "
+                        "propuesto esta formalización. Compruébala antes de "
+                        "deducir.")
                 for i, item in enumerate(items):
                     item["formula"] = render(nuevas[i])
                     item["ok"] = True

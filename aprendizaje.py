@@ -352,6 +352,18 @@ class Aprendizaje:
             self._guardar()
         return True
 
+    def tiene_frase(self, frase, cuantificado=False):
+        """True si la frase ya está en el banco con ese tipo de cálculo."""
+        clave = _clave(str(frase or ""))
+        if not clave:
+            return False
+        tipo = "pred" if cuantificado else "prop"
+        with self._lock:
+            return any(
+                isinstance(r, dict) and r.get("calculus") == tipo and
+                _clave(str(r.get("texto", ""))) == clave
+                for r in self.datos["banco"])
+
     def confirmar_frases(self, frases):
         """Marca como confirmadas las frases de un ejercicio ya deducido."""
         claves = {_clave(str(f)) for f in frases if str(f).strip()}
