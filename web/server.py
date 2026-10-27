@@ -18,7 +18,6 @@ import re
 import socket
 import sys
 import traceback
-import unicodedata
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -125,27 +124,31 @@ def _frases(data):
     return [str(x).strip() for x in crudas if str(x).strip()]
 
 
-_TIEMPO_INICIAL = {"hoy", "ayer", "mañana", "manana", "ahora",
-                   "actualmente"}
+_TIEMPO_INICIAL = {"hoy", "ayer", "manana", "ahora", "actualmente"}
 
 
-def _sin_acentos(texto):
-    normal = unicodedata.normalize("NFKD", str(texto).lower())
-    return "".join(c for c in normal if not unicodedata.combining(c))
+def _raiz_infinitivo(palabra):
+    """Une la raíz verbal con su infinitivo («moj» / «mojar»)."""
+    if len(palabra) >= 5 and palabra.endswith(("ar", "er", "ir")):
+        return palabra[:-2]
+    return palabra
 
 
 def _clave_atomo(texto):
     """Clave para reconocer el mismo enunciado escrito de otra forma.
 
-    Ignora mayúsculas, acentos y el orden de las palabras, y quita adverbios
-    de tiempo al principio («Hoy es viernes» / «es viernes»).  Así
-    «La vida te sonríe» y «te sonríe la vida» reciben la misma letra.
+    Usa la normalización del analizador, que reduce los verbos a su raíz: así
+    «Llovió mucho en el pueblo» y «Lloverá mucho en el pueblo» son el mismo
+    átomo.  Además ignora mayúsculas, acentos, el orden de las palabras y los
+    adverbios de tiempo iniciales («Hoy es viernes» / «es viernes»).
     """
-    palabras = re.findall(r"[a-z0-9]+", _sin_acentos(texto))
+    normal = fz._norm(str(texto))
+    palabras = re.findall(r"[a-z0-9]+", normal)
     while palabras and palabras[0] in _TIEMPO_INICIAL:
         palabras.pop(0)
     if palabras[:3] == ["en", "este", "momento"]:
         palabras = palabras[3:]
+    palabras = [_raiz_infinitivo(p) for p in palabras]
     return " ".join(sorted(palabras))
 
 
