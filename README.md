@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.1.5.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.1.6.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:
@@ -280,10 +280,10 @@ La memoria es local cuando se ejecuta en tu ordenador. En la versión pública
 de Render es compartida entre los visitantes del servicio y se guarda en el
 almacenamiento efímero de la instancia: se conserva mientras el servicio no se
 redespliegue ni se reinicie. Para conservarla de forma permanente hace falta un
-disco persistente o una base de datos externa. La variable
-`LOGICA_APRENDIZAJE=0` desactiva únicamente la reutilización automática de
-fórmulas: el banco de frases y los ejercicios se siguen guardando y mostrando.
-Se puede borrar desde la terminal:
+disco persistente o una base de datos externa. En la web el aprendizaje está
+siempre activo: las frases de los ejercicios que se deducen bien se marcan como
+confirmadas y alimentan las plantillas que se reutilizan después. Se puede
+borrar desde la terminal:
 
 ```bash
 python3 main.py --olvidar        # borra las frases recordadas
@@ -367,7 +367,9 @@ directamente**: se vuelve a comprobar con el motor de deducción del curso. Sól
 si la prueba se valida, se muestran las fórmulas corregidas marcadas como
 **«A.E.»**, con un aviso para revisarlas. Si tampoco así hay deducción, se
 mantiene el mensaje de error explicando que puede faltar una premisa o que la
-conclusión no se sigue.
+conclusión no se sigue. En ese caso aparece el botón **«A.E.: corregir y
+deducir»**, que vuelve a pedir a la ayuda exterior una corrección completa de
+las fórmulas y comprueba la prueba otra vez con el motor local.
 
 La búsqueda sola no resuelve el ejercicio: los resultados son texto libre y
 pueden ser de otro ejercicio. El modelo es el que interpreta esos resultados

@@ -667,6 +667,8 @@
     aviso(avisoEntrada, "");
     const boton = forzarIA ? $("#btn-consultar-ia") : $("#btn-resolver");
     cargando(boton, true);
+    const botonAEDeduccion = $("#btn-ayuda-deduccion");
+    if (botonAEDeduccion) botonAEDeduccion.hidden = true;
     try {
       if (estado.plantilla && !forzarIA &&
           area.value.trim() === estado.plantillaTexto.trim()) {
@@ -857,13 +859,13 @@
     if (primero) primero.focus();
   }
 
-  async function deducir(mostrarCarga) {
+  async function deducir(mostrarCarga, forzarIA = false) {
     const formulas = recogerFormulas();
     if (formulas.length < 2 || formulas.some((f) => !f)) {
       aviso(avisoFormal, "Falta alguna fórmula por escribir.");
       return false;
     }
-    const boton = $("#btn-deducir");
+    const boton = forzarIA ? $("#btn-ayuda-deduccion") : $("#btn-deducir");
     if (mostrarCarga) cargando(boton, true);
     // No borrar el aviso verde de que se ha consultado la IA al deducir.
     if (!avisoFormal.classList.contains("aviso--ok")) {
@@ -874,6 +876,7 @@
         formulas,
         sentences: estado.items.map((item) => item.text),
         vocab: recogerVocabulario(),
+        force_ai: forzarIA,
       });
       if (!data.ok) {
         if (data.errores) marcarErrores(data.errores);
@@ -882,9 +885,13 @@
         marcarPaso(2, "activo");
         marcarPaso(3, "");
         aviso(avisoFormal, data.error || "No se ha encontrado la deducción.");
+        const botonAE = $("#btn-ayuda-deduccion");
+        if (botonAE) botonAE.hidden = !(data.puede_ae || data.ia);
         $("#formalizacion").scrollIntoView({ behavior: "smooth", block: "start" });
         return false;
       }
+      const botonAE = $("#btn-ayuda-deduccion");
+      if (botonAE) botonAE.hidden = true;
       estado.lineas = data.lines;
       estado.plain = data.plain;
       let repintarFormulas = false;
@@ -946,6 +953,11 @@
 
   $("#btn-deducir").addEventListener("click", () => deducir(true));
 
+  const btnAyudaDeduccion = $("#btn-ayuda-deduccion");
+  if (btnAyudaDeduccion) {
+    btnAyudaDeduccion.addEventListener("click", () => deducir(true, true));
+  }
+
   const btnConsultarIA = $("#btn-consultar-ia");
   if (btnConsultarIA) {
     btnConsultarIA.addEventListener("click", async () => {
@@ -1004,6 +1016,10 @@
       const datos = await respuesta.json();
       const botonIA = $("#btn-consultar-ia");
       if (botonIA) botonIA.hidden = !datos.ia;
+      if (!datos.ia) {
+        const botonAE = $("#btn-ayuda-deduccion");
+        if (botonAE) botonAE.hidden = true;
+      }
       const versionTexto = $("#version-texto");
       if (versionTexto && datos.version) {
         versionTexto.textContent = "Lógica · v" + datos.version;

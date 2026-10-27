@@ -14,9 +14,11 @@ import hashlib
 import json
 import mimetypes
 import os
+import re
 import socket
 import sys
 import traceback
+import unicodedata
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -61,30 +63,13 @@ def _cargar_config_ia():
 
 _cargar_config_ia()
 
-def _memoria_activa():
-    """Indica si se reutilizan fórmulas aprendidas automáticamente.
-
-    - ``LOGICA_APRENDIZAJE=0`` desactiva la reutilización.
-    - ``LOGICA_APRENDIZAJE=1`` la activa siempre.
-    - Sin variable, se desactiva en servidores públicos (Render define
-      ``RENDER``) para no reutilizar fórmulas de otras personas.
-
-    El banco visible de frases y los ejercicios guardados funcionan siempre,
-    aunque esta opción esté desactivada.
-    """
-    valor = os.environ.get("LOGICA_APRENDIZAJE", "").strip()
-    if valor == "0":
-        return False
-    if valor == "1":
-        return True
-    return not os.environ.get("RENDER")
-
 
 # Almacén compartido por todas las peticiones.  Guarda el banco de frases y
-# los ejercicios; sólo se usa para reutilizar fórmulas si el aprendizaje está
-# activo.
+# los ejercicios.
 MEMORIA = Aprendizaje()
-APRENDIZAJE = MEMORIA if _memoria_activa() else None
+# El aprendizaje está siempre activo: los ejercicios deducidos alimentan el
+# banco y las plantillas que se reutilizan en ejercicios parecidos.
+APRENDIZAJE = MEMORIA
 
 
 def _sembrar_banco():
@@ -117,7 +102,8 @@ def _sembrar_banco():
                     ejemplo.get("texto", ""), ejemplo.get("formula", ""),
                     ejemplo.get("vocab") or {},
                     ejemplo.get("calculus") == "pred",
-                    ejemplo.get("fuente") or "ejemplo"):
+                    ejemplo.get("fuente") or "ejemplo",
+                    confirmada=True):
                 sembradas += 1
         except Exception:
             continue
@@ -125,6 +111,10 @@ def _sembrar_banco():
 
 
 _sembrar_banco()
+# Recupera patrones de los ejercicios y ejemplos guardados en arranques
+# anteriores, para que la memoria no empiece de cero.
+MEMORIA.aprender_de_banco()
+MEMORIA.aprender_de_ejercicios()
 
 
 # ==========================================================================
@@ -135,6 +125,107 @@ def _frases(data):
     if not isinstance(crudas, list):
         return []
     return [str(x).strip() for x in crudas if str(x).strip()]
+
+
+_TIEMPO_INICIAL = {"hoy", "ayer", "mañana", "manana", "ahora",
+                   "actualmente"}
+
+
+def _sin_acentos(texto):
+    normal = unicodedata.normalize("NFKD", str(texto).lower())
+    return "".join(c for c in normal if not unicodedata.combining(c))
+
+
+def _clave_atomo(texto):
+    """Clave para reconocer el mismo enunciado escrito de otra forma.
+
+    Ignora mayúsculas, acentos y el orden de las palabras, y quita adverbios
+    de tiempo al principio («Hoy es viernes» / «es viernes»).  Así
+    «La vida te sonríe» y «te sonríe la vida» reciben la misma letra.
+    """
+    palabras = re.findall(r"[a-z0-9]+", _sin_acentos(texto))
+    while palabras and palabras[0] in _TIEMPO_INICIAL:
+        palabras.pop(0)
+    if palabras[:3] == ["en", "este", "momento"]:
+        palabras = palabras[3:]
+    return " ".join(sorted(palabras))
+
+
+def _remapa_atomos(formula, mapa):
+    """Sustituye letras de átomo manteniendo la estructura de la fórmula."""
+    if not mapa:
+        return formula
+    if formula.kind == "var":
+        return F.var(mapa.get(formula.data, formula.data))
+    if formula.kind == "pred":
+        return F.pred(mapa.get(formula.data, formula.data), formula.term)
+    if formula.kind in ("forall", "exists"):
+        return F(formula.kind, formula.data,
+                 (_remapa_atomos(formula.children[0], mapa),))
+    return F(formula.kind, formula.data,
+             tuple(_remapa_atomos(c, mapa) for c in formula.children))
+
+
+def _unificar_atomos(items, formulas, form, quantified):
+    """Da la misma letra a descripciones equivalentes del mismo ejercicio.
+
+    El analizador trabaja frase a frase, así que a veces usa letras distintas
+    para el mismo enunciado.  Sin esta unificación, la deducción falla aunque
+    el razonamiento sea correcto.
+    """
+    textos = {t.letter: t.text.strip(" ,.") for t in form.vocab}
+    grupos = {}
+    orden = []
+    for formula in formulas:
+        for atomo in atoms(formula):
+            letra = atomo.data
+            if letra in grupos or letra not in textos:
+                continue
+            clave = _clave_atomo(textos[letra])
+            if not clave:
+                continue
+            orden.append(letra)
+            grupos.setdefault(clave, []).append(letra)
+
+    mapa = {}
+    for clave in grupos:
+        letras = grupos[clave]
+        if len(letras) < 2:
+            continue
+        destino = letras[0]
+        for letra in letras[1:]:
+            mapa[letra] = destino
+        # Conservamos la descripción más completa como texto del grupo.
+        mejor = max((textos[l] for l in letras), key=len)
+        textos[destino] = mejor
+
+    if not mapa:
+        return formulas, _sugerencias_vocabulario(form, formulas, quantified)
+
+    nuevas = [_remapa_atomos(f, mapa) for f in formulas]
+
+    # Renumerar en orden de aparición (p, q, r…) evita huecos y deja el
+    # vocabulario limpio: las letras que usó el analizador frase a frase
+    # pueden ser p, r, s, q… tras unificar.
+    orden = []
+    for formula in nuevas:
+        for atomo in atoms(formula):
+            if atomo.data not in orden:
+                orden.append(atomo.data)
+    letras = []
+    for i in range(len(orden)):
+        if quantified:
+            letras.append("CDEFGHIJKLMNOPQRSTUVWXYZAB"[i]
+                          if i < 26 else "C" + str(i))
+        else:
+            letras.append(fz._letra_enunciado(i))
+    renumerado = dict(zip(orden, letras))
+    nuevas = [_remapa_atomos(f, renumerado) for f in nuevas]
+    textos = {renumerado[l]: textos[l] for l in orden if l in textos}
+
+    for item, formula in zip(items, nuevas):
+        item["formula"] = render(formula)
+    return nuevas, _vocab_con_textos(nuevas, textos, None, quantified)
 
 
 def _sugerencias_vocabulario(form, formulas, quantified):
@@ -234,7 +325,8 @@ def api_formalizar(data):
             formulas.append(formula)
 
     if len(formulas) == len(frases):
-        vocab = _sugerencias_vocabulario(form, formulas, quantified)
+        formulas, vocab = _unificar_atomos(
+            items, formulas, form, quantified)
     else:
         vocab = []
 
@@ -775,7 +867,7 @@ def _legado_sin_duplicar(datos):
     return resultado
 
 
-def _ayuda_exterior_deduccion(data, formulas, cuantificado):
+def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False):
     """Pide a la IA una formalización alternativa cuando no hay deducción.
 
     La propuesta se comprueba siempre con el motor local: si la IA cambia una
@@ -791,7 +883,9 @@ def _ayuda_exterior_deduccion(data, formulas, cuantificado):
     if any(not f for f in frases):
         return None
 
-    propuesta = asistente_ia.formalizar(frases, cuantificado, general=True)
+    propuesta = asistente_ia.formalizar(
+        frases, cuantificado, general=True,
+        formulas_actuales=[render(f) for f in formulas])
     if not propuesta:
         return {"lines": None,
                 "aviso": ("No se ha podido consultar la ayuda exterior (A.E.) "
@@ -866,6 +960,7 @@ def api_deducir(data):
 
     premisas, meta = formulas[:-1], formulas[-1]
     cuantificado = any(a.kind == "pred" for f in formulas for a in atoms(f))
+    forzar_ia = bool(data.get("force_ai"))
     try:
         lines = prove(premisas, meta)
     except Exception:
@@ -879,7 +974,8 @@ def api_deducir(data):
     ia_aplicada = False
     vocab = None
     if lines is None:
-        variante = _variante_docente(premisas, meta)
+        variante = None if forzar_ia else _variante_docente(premisas, meta)
+        ayuda = None
         if variante is not None:
             indice, corregida, premisas, lines = variante
             correcciones[str(indice)] = render(corregida)
@@ -889,7 +985,8 @@ def api_deducir(data):
                 "la solución de clase; revisa si esa era la intención."
                 % (indice + 1, render(corregida)))
         else:
-            ayuda = _ayuda_exterior_deduccion(data, formulas, cuantificado)
+            ayuda = _ayuda_exterior_deduccion(
+                data, formulas, cuantificado, forzar=forzar_ia)
             if ayuda is not None and ayuda.get("lines") is not None:
                 premisas = ayuda["premisas"]
                 meta = ayuda["meta"]
@@ -917,7 +1014,9 @@ def api_deducir(data):
                 elif ayuda.get("aviso"):
                     error += " " + ayuda["aviso"]
                 return {"ok": False, "error": error,
-                        "ia_aplicada": False}
+                        "ia_aplicada": False,
+                        "ia": asistente_ia.configurado(),
+                        "puede_ae": asistente_ia.configurado()}
 
     vistas = _vistas_de_prueba(lines)
     plain = formato_libro(lines)

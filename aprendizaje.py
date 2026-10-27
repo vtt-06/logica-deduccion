@@ -25,6 +25,8 @@ import re
 import threading
 from datetime import datetime
 
+from formulas import atoms, parse_formula
+
 RUTA_POR_DEFECTO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "aprendizaje.json")
 LIMITE_EXACTAS = 1500
@@ -167,6 +169,10 @@ class Aprendizaje:
                 if limpio != entrada.get("texto", ""):
                     entrada["texto"] = limpio
                     cambio_banco = True
+                if "confirmada" not in entrada:
+                    entrada["confirmada"] = entrada.get("fuente") in (
+                        "ejemplo", "aprendida")
+                    cambio_banco = True
             self.datos["banco"] = banco
         if isinstance(exactas, dict):
             # Migración suave: versiones anteriores guardaban la conclusión
@@ -291,13 +297,12 @@ class Aprendizaje:
         return True
 
     def registrar_frase(self, frase, formula, vocab=None, cuantificado=False,
-                        fuente=""):
-        """Añade una frase al banco visible, sin usarla para aprender.
+                        fuente="", confirmada=False):
+        """Añade una frase al banco visible.
 
         Se llama en cuanto se formaliza una frase, aunque la deducción no
-        llegue a completarse.  Así el banco de frases nunca aparece vacío
-        después de usar la aplicación.  Es un registro de consulta: no
-        interviene en la reutilización automática de fórmulas.
+        llegue a completarse.  Las frases de ejercicios resueltos se marcan
+        como confirmadas y sirven para aprender patrones reutilizables.
         """
         texto = " ".join(str(frase or "").split()).strip()
         texto = re.sub(r"^=>\s*", "", texto).strip()
@@ -322,6 +327,7 @@ class Aprendizaje:
             "vocab": vocabulario,
             "calculus": tipo_calculo,
             "fuente": str(fuente or ""),
+            "confirmada": bool(confirmada),
             "actualizado": ahora,
         }
         with self._lock:
@@ -333,6 +339,8 @@ class Aprendizaje:
                     registro["usos"] = int(anterior.get("usos", 0)) + 1
                     registro["primera_vez"] = anterior.get(
                         "primera_vez", anterior.get("actualizado", ahora))
+                    registro["confirmada"] = bool(
+                        confirmada or anterior.get("confirmada"))
                     self.datos["banco"][i] = registro
                     self._guardar()
                     return True
@@ -343,6 +351,74 @@ class Aprendizaje:
                 del self.datos["banco"][LIMITE_BANCO:]
             self._guardar()
         return True
+
+    def confirmar_frases(self, frases):
+        """Marca como confirmadas las frases de un ejercicio ya deducido."""
+        claves = {_clave(str(f)) for f in frases if str(f).strip()}
+        if not claves:
+            return 0
+        confirmadas = 0
+        with self._lock:
+            for registro in self.datos["banco"]:
+                if not isinstance(registro, dict):
+                    continue
+                if _clave(str(registro.get("texto", ""))) in claves:
+                    if not registro.get("confirmada"):
+                        registro["confirmada"] = True
+                        confirmadas += 1
+            if confirmadas:
+                self._guardar()
+        return confirmadas
+
+    def _aprender_registro(self, texto, formula, vocab, cuantificado):
+        if not texto or not formula or not isinstance(vocab, dict):
+            return False
+        try:
+            letras = {a.data for a in atoms(parse_formula(formula))}
+        except Exception:
+            return False
+        textos = {str(k): str(v).strip() for k, v in vocab.items()
+                  if str(v).strip()}
+        if not letras or not letras.issubset(textos):
+            return False
+        return self.guardar(str(texto), str(formula), textos, cuantificado)
+
+    def aprender_de_banco(self):
+        """Convierte en aprendizaje las frases confirmadas del banco.
+
+        Sólo se usan las frases de ejercicios que ya se dedujeron bien o los
+        ejemplos iniciales; las propuestas que fallaron no contaminan la
+        memoria.
+        """
+        with self._lock:
+            registros = [dict(r) for r in self.datos["banco"]
+                         if isinstance(r, dict) and r.get("confirmada")]
+        aprendidas = 0
+        for registro in registros:
+            if self._aprender_registro(
+                    registro.get("texto", ""), registro.get("formula", ""),
+                    registro.get("vocab") or {},
+                    registro.get("calculus") == "pred"):
+                aprendidas += 1
+        return aprendidas
+
+    def aprender_de_ejercicios(self):
+        """Recupera patrones de los ejercicios completos ya guardados."""
+        with self._lock:
+            ejercicios = [dict(e) for e in self.datos["ejercicios"]
+                          if isinstance(e, dict)]
+        aprendidas = 0
+        for ejercicio in ejercicios:
+            vocab = ejercicio.get("vocab") or {}
+            cuantificado = ejercicio.get("calculus") == "pred"
+            for frase in ejercicio.get("frases") or []:
+                if not isinstance(frase, dict):
+                    continue
+                if self._aprender_registro(
+                        frase.get("text", ""), frase.get("formula", ""),
+                        vocab, cuantificado):
+                    aprendidas += 1
+        return aprendidas
 
     def _podar_exactas(self):
         exactas = self.datos["exactas"]
@@ -528,6 +604,7 @@ class Aprendizaje:
                     "vocab": dict(valor.get("vocab") or {}),
                     "calculus": valor.get("calculus", "prop"),
                     "fuente": valor.get("fuente", ""),
+                    "confirmada": bool(valor.get("confirmada")),
                     "usos": int(valor.get("usos", 0)),
                     "actualizado": valor.get("actualizado", ""),
                 })

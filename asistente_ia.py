@@ -154,16 +154,31 @@ def _normalizar_formulas(formulas):
     return salida
 
 
-def formalizar(frases, cuantificado, general=False, indices=None):
+def formalizar(frases, cuantificado, general=False, indices=None,
+               formulas_actuales=None):
     """Devuelve ``{'formulas': [...], 'vocab': {...}}`` o ``None``.
 
     ``general`` hace que la búsqueda combine resultados del profesor con una
     búsqueda general.  ``indices`` limita la búsqueda a las frases dudosas.
+    ``formulas_actuales`` acompaña la formalización que no ha permitido
+    deducir para pedir a la IA que localice y corrija el error.
     """
     if not configurado() or not frases:
         return None
 
     sistema, usuario = _prompt(frases, cuantificado)
+
+    if formulas_actuales:
+        usuario += (
+            "\n\nFormalización actual (NO ha permitido deducir la "
+            "conclusión; puede contener errores):\n" +
+            "\n".join("%d. %s" % (i + 1, f)
+                      for i, f in enumerate(formulas_actuales)))
+        sistema += (
+            " La formalización actual no permite llegar a la conclusión. "
+            "Localiza el error: letras repetidas para el mismo enunciado, "
+            "dirección equivocada de un condicional o una parte de la frase "
+            "omitida. Devuelve la formalización corregida completa.")
 
     # Contexto opcional de búsqueda web.  Los resultados son texto libre:
     # se añaden como pistas, nunca como fórmulas.
