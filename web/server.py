@@ -374,9 +374,16 @@ def api_formalizar(data):
                             "válidas para las frases marcadas; se mantiene la "
                             "formalización local.")
         elif forzar_ia:
-            aviso_ia = ("No se ha podido consultar la ayuda exterior (A.E.). "
-                        "Se mantiene la formalización local; revisa la conexión "
-                        "o la clave.")
+            if asistente_ia.gratuita():
+                aviso_ia = ("No se ha podido consultar la ayuda exterior "
+                            "(A.E.). El servicio gratuito admite una consulta "
+                            "cada 30 segundos y puede estar saturado. Espera "
+                            "medio minuto e inténtalo de nuevo, o configura un "
+                            "proveedor propio.")
+            else:
+                aviso_ia = ("No se ha podido consultar la ayuda exterior "
+                            "(A.E.). Se mantiene la formalización local; "
+                            "revisa la conexión o la clave.")
         elif indices_ia:
             aviso_ia = ("No se ha podido consultar la ayuda exterior (A.E.) "
                         "para las frases marcadas; se mantiene la formalización "
@@ -873,10 +880,16 @@ def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False):
         frases, cuantificado, general=True,
         formulas_actuales=[render(f) for f in formulas])
     if not propuesta:
-        return {"lines": None,
-                "aviso": ("No se ha podido consultar la ayuda exterior (A.E.) "
-                          "o no ha devuelto una propuesta válida. Revisa las "
-                          "fórmulas a mano.")}
+        if asistente_ia.gratuita():
+            aviso = ("No se ha podido consultar la ayuda exterior (A.E.). "
+                     "El servicio gratuito admite una consulta cada 30 "
+                     "segundos y puede estar saturado. Espera medio minuto "
+                     "e inténtalo de nuevo, o configura un proveedor propio.")
+        else:
+            aviso = ("No se ha podido consultar la ayuda exterior (A.E.) "
+                     "o no ha devuelto una propuesta válida. Revisa las "
+                     "fórmulas a mano.")
+        return {"lines": None, "aviso": aviso}
     nuevas = []
     for texto in propuesta.get("formulas") or []:
         try:

@@ -21,6 +21,7 @@ nada a internet.
 
 import json
 import os
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -35,6 +36,54 @@ TIMEOUT_POR_DEFECTO = 40
 # cada 30 segundos por dirección IP.
 FALLBACK_URL = "https://text.pollinations.ai/openai"
 FALLBACK_MODEL = "openai-fast"
+
+# El servicio gratuito sólo admite una petición cada 30 segundos por IP.
+# Serializamos las consultas y reutilizamos respuestas recientes: así la
+# formalización y la deducción no se pisan al pedir ayuda seguidas.
+INTERVALO_GRATUITO = 31.0
+_ULTIMA_GRATUITA = 0.0
+_LOCK_GRATUITA = threading.Lock()
+_CACHE = {}
+_CACHE_LOCK = threading.Lock()
+_CACHE_MAX = 200
+_CACHE_TTL = 900.0
+
+
+def _clave_cache(frases, cuantificado, formulas_actuales):
+    return (tuple(str(f).strip() for f in frases), bool(cuantificado),
+            tuple(str(f).strip() for f in (formulas_actuales or ())))
+
+
+def _leer_cache(clave):
+    with _CACHE_LOCK:
+        entrada = _CACHE.get(clave)
+        if not entrada:
+            return None
+        momento, propuesta = entrada
+        if time.monotonic() - momento > _CACHE_TTL:
+            _CACHE.pop(clave, None)
+            return None
+        return {"formulas": list(propuesta["formulas"]),
+                "vocab": dict(propuesta["vocab"])}
+
+
+def _guardar_cache(clave, propuesta):
+    with _CACHE_LOCK:
+        if len(_CACHE) >= _CACHE_MAX:
+            _CACHE.pop(next(iter(_CACHE)))
+        _CACHE[clave] = (time.monotonic(), propuesta)
+
+
+def _turno_gratuito():
+    """Espera lo necesario para respetar el límite del servicio gratuito."""
+    global _ULTIMA_GRATUITA
+    if _tiene_proveedor():
+        return
+    with _LOCK_GRATUITA:
+        espera = _ULTIMA_GRATUITA + INTERVALO_GRATUITO - time.monotonic()
+        if espera > 0:
+            time.sleep(min(espera, INTERVALO_GRATUITO))
+        _ULTIMA_GRATUITA = time.monotonic()
 
 
 def _fallback_activo():
@@ -166,6 +215,19 @@ def formalizar(frases, cuantificado, general=False, indices=None,
     if not configurado() or not frases:
         return None
 
+    clave_cache = _clave_cache(frases, cuantificado, formulas_actuales)
+    cacheado = _leer_cache(clave_cache)
+    if cacheado is None and formulas_actuales:
+        # Si la formalización acaba de consultar A.E., reutilizamos aquella
+        # propuesta para la deducción en vez de hacer otra petición seguida
+        # (el servicio gratuito sólo permite una cada 30 s).  No se reutiliza
+        # si es exactamente la formalización que acaba de fallar.
+        previo = _leer_cache(_clave_cache(frases, cuantificado, None))
+        if previo and tuple(previo["formulas"]) != tuple(formulas_actuales):
+            cacheado = previo
+    if cacheado is not None:
+        return cacheado
+
     sistema, usuario = _prompt(frases, cuantificado)
 
     if formulas_actuales:
@@ -231,6 +293,8 @@ def formalizar(frases, cuantificado, general=False, indices=None,
             return json.loads(respuesta.read().decode("utf-8"))
 
     try:
+        if not _tiene_proveedor():
+            _turno_gratuito()
         datos = enviar()
     except urllib.error.HTTPError as exc:
         # El servicio gratuito devuelve 402/429 cuando se hacen dos consultas
@@ -277,4 +341,6 @@ def formalizar(frases, cuantificado, general=False, indices=None,
     if not isinstance(vocab, dict):
         vocab = {}
     vocab = {str(k): str(v) for k, v in vocab.items() if str(v).strip()}
-    return {"formulas": formulas, "vocab": vocab}
+    resultado = {"formulas": formulas, "vocab": vocab}
+    _guardar_cache(clave_cache, resultado)
+    return {"formulas": list(formulas), "vocab": dict(vocab)}
