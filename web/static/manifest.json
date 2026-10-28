@@ -1,6 +1,6 @@
 {
-  "name": "Lógica — deducción asistida",
-  "short_name": "Lógica",
+  "name": "FraLog — de la frase a la deducción",
+  "short_name": "FraLog",
   "description": "Formaliza frases en español y genera deducciones paso a paso con las reglas del curso.",
   "lang": "es",
   "start_url": "/",

@@ -1,4 +1,4 @@
-/* Lógica — deducción asistida (cliente) */
+/* FraLog — de la frase a la deducción (cliente) */
 
 (() => {
   "use strict";
@@ -1071,7 +1071,7 @@
       }
       const versionTexto = $("#version-texto");
       if (versionTexto && datos.version) {
-        versionTexto.textContent = "Lógica · v" + datos.version;
+        versionTexto.textContent = "FraLog · v" + datos.version;
       }
       if (!datos.activo) {
         textoAprendizaje.textContent =

@@ -1228,7 +1228,7 @@ def main(argv=None):
             return 0
         raise
     print()
-    print("  Lógica — servidor web")
+    print("  FraLog — servidor web")
     print("  " + "-" * 44)
     print("  En este ordenador:  http://localhost:%d" % args.port)
     print("  Desde otro equipo:  http://%s:%d" % (ip_local(), args.port))
