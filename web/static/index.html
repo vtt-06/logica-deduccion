@@ -244,6 +244,36 @@
       </div>
 
       <p id="aviso-formal" class="aviso" role="alert" hidden></p>
+
+      <details id="panel-ia" class="panel-ia">
+        <summary>A.E. con tu propia clave (opcional)</summary>
+        <p class="panel-ia__intro">
+          Si la ayuda exterior no responde, puedes usar tu clave de Groq u otro
+          servicio compatible con OpenAI. La clave se guarda sólo en este
+          navegador y se envía con cada consulta; no se guarda en el servidor.
+        </p>
+        <div class="panel-ia__campos">
+          <label>Dirección
+            <input id="ia-url" type="url" autocomplete="off"
+                   placeholder="https://api.groq.com/openai/v1">
+          </label>
+          <label>Modelo
+            <input id="ia-modelo" type="text" autocomplete="off"
+                   placeholder="openai/gpt-oss-120b">
+          </label>
+          <label>Clave
+            <input id="ia-clave" type="password" autocomplete="new-password"
+                   placeholder="gsk_...">
+          </label>
+        </div>
+        <div class="panel-ia__acciones">
+          <button type="button" id="btn-guardar-ia"
+                  class="boton boton--secundario">Guardar</button>
+          <button type="button" id="btn-borrar-ia"
+                  class="boton boton--fantasma">Quitar</button>
+        </div>
+        <p id="estado-ia-local" class="panel-ia__estado"></p>
+      </details>
     </section>
 
     <!-- ================= PASO 3 ================= -->
@@ -2239,7 +2269,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
 
   <footer class="pie">
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">Lógica · v2.1.6</span>
+      <span id="version-texto" class="version-texto">Lógica · v2.1.7</span>
     </div>
   </footer>
 

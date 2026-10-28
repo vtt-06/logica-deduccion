@@ -108,10 +108,37 @@
     nodo.textContent = mensaje;
   }
 
+  const CLAVE_IA_LOCAL = "logica.proveedorIA";
+
+  function leerProveedorIA() {
+    try {
+      const guardado = JSON.parse(localStorage.getItem(CLAVE_IA_LOCAL) || "null");
+      if (!guardado || !guardado.url || !guardado.model) return null;
+      return {
+        url: String(guardado.url).trim(),
+        model: String(guardado.model).trim(),
+        key: String(guardado.key || "").trim(),
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function cabecerasIA() {
+    const proveedor = leerProveedorIA();
+    if (!proveedor) return {};
+    const cabeceras = {
+      "X-Logica-IA-URL": proveedor.url,
+      "X-Logica-IA-MODEL": proveedor.model,
+    };
+    if (proveedor.key) cabeceras["X-Logica-IA-KEY"] = proveedor.key;
+    return cabeceras;
+  }
+
   async function pedir(url, datos) {
     const respuesta = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...cabecerasIA() },
       body: JSON.stringify(datos),
     });
     let cuerpo;
@@ -722,6 +749,10 @@
       }
       aviso(avisoFormal, mensajeFormal,
         data.ia_aplicada ? "ok" : "");
+      if (/No se ha podido consultar la ayuda exterior/.test(mensajeFormal)) {
+        const panelIA = $("#panel-ia");
+        if (panelIA) panelIA.open = true;
+      }
       marcarPaso(1, "hecho");
       marcarPaso(2, "activo");
       marcarPaso(3, "");
@@ -949,7 +980,12 @@
       if (data.aprendido) actualizarAprendizaje();
       return true;
     } catch (error) {
-      aviso(avisoFormal, error.message || "Error de conexión.");
+      const mensaje = error.message || "Error de conexión.";
+      aviso(avisoFormal, mensaje);
+      if (/No se ha podido consultar la ayuda exterior/.test(mensaje)) {
+        const panelIA = $("#panel-ia");
+        if (panelIA) panelIA.open = true;
+      }
       return false;
     } finally {
       if (mostrarCarga) cargando(boton, false);
@@ -1022,7 +1058,10 @@
   async function actualizarAprendizaje() {
     if (!textoAprendizaje) return;
     try {
-      const respuesta = await fetch("/api/aprendizaje", { cache: "no-store" });
+      const respuesta = await fetch("/api/aprendizaje", {
+        cache: "no-store",
+        headers: cabecerasIA(),
+      });
       const datos = await respuesta.json();
       const botonIA = $("#btn-consultar-ia");
       if (botonIA) botonIA.hidden = !datos.ia;
@@ -2063,8 +2102,75 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* A.E. con la clave del navegador                                    */
+  /* ------------------------------------------------------------------ */
+  function configurarProveedorIA() {
+    const url = $("#ia-url");
+    const modelo = $("#ia-modelo");
+    const clave = $("#ia-clave");
+    const estadoLocal = $("#estado-ia-local");
+    const btnGuardar = $("#btn-guardar-ia");
+    const btnBorrar = $("#btn-borrar-ia");
+    if (!url || !modelo || !clave || !estadoLocal) return;
+
+    function pintarEstado(mensaje) {
+      const proveedor = leerProveedorIA();
+      if (mensaje) {
+        estadoLocal.textContent = mensaje;
+        return;
+      }
+      estadoLocal.textContent = proveedor
+        ? "A.E. usará tu clave con el modelo " + proveedor.model +
+          ". Se guarda sólo en este navegador."
+        : "Ahora mismo A.E. usa la configuración del servidor.";
+    }
+
+    function rellenar() {
+      const proveedor = leerProveedorIA();
+      url.value = proveedor ? proveedor.url : "";
+      modelo.value = proveedor ? proveedor.model : "";
+      clave.value = proveedor ? proveedor.key : "";
+      pintarEstado("");
+    }
+
+    btnGuardar?.addEventListener("click", () => {
+      const datos = {
+        url: url.value.trim(),
+        model: modelo.value.trim(),
+        key: clave.value.trim(),
+      };
+      if (!datos.url || !datos.model) {
+        pintarEstado("Escribe la dirección y el modelo del servicio.");
+        return;
+      }
+      try {
+        localStorage.setItem(CLAVE_IA_LOCAL, JSON.stringify(datos));
+      } catch (error) {
+        pintarEstado("El navegador no permite guardar la configuración.");
+        return;
+      }
+      pintarEstado("Guardado. La próxima consulta de A.E. usará tu clave.");
+      actualizarAprendizaje();
+    });
+
+    btnBorrar?.addEventListener("click", () => {
+      try {
+        localStorage.removeItem(CLAVE_IA_LOCAL);
+      } catch (error) {
+        /* sin almacenamiento: no hay nada que borrar */
+      }
+      rellenar();
+      pintarEstado("Configuración borrada. A.E. vuelve a la del servidor.");
+      actualizarAprendizaje();
+    });
+
+    rellenar();
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Arranque                                                           */
   /* ------------------------------------------------------------------ */
+  configurarProveedorIA();
   restaurarBorrador();
   if (!area.value) {
     area.value = EJEMPLOS.corro.texto;

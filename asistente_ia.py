@@ -49,9 +49,11 @@ _CACHE_MAX = 200
 _CACHE_TTL = 900.0
 
 
-def _clave_cache(frases, cuantificado, formulas_actuales):
+def _clave_cache(frases, cuantificado, formulas_actuales, proveedor=None):
+    p = _normalizar_proveedor(proveedor)
+    origen = (p["url"], p["model"]) if p else None
     return (tuple(str(f).strip() for f in frases), bool(cuantificado),
-            tuple(str(f).strip() for f in (formulas_actuales or ())))
+            tuple(str(f).strip() for f in (formulas_actuales or ())), origen)
 
 
 def _leer_cache(clave):
@@ -74,10 +76,10 @@ def _guardar_cache(clave, propuesta):
         _CACHE[clave] = (time.monotonic(), propuesta)
 
 
-def _turno_gratuito():
+def _turno_gratuito(proveedor=None):
     """Espera lo necesario para respetar el límite del servicio gratuito."""
     global _ULTIMA_GRATUITA
-    if _tiene_proveedor():
+    if _tiene_proveedor(proveedor):
         return
     with _LOCK_GRATUITA:
         espera = _ULTIMA_GRATUITA + INTERVALO_GRATUITO - time.monotonic()
@@ -92,24 +94,55 @@ def _fallback_activo():
     return valor not in ("0", "no", "false", "off")
 
 
-def _tiene_proveedor():
-    return bool(os.environ.get("LOGICA_IA_URL") and
-                os.environ.get("LOGICA_IA_MODEL"))
+def _normalizar_proveedor(proveedor):
+    """Valida un proveedor enviado por el navegador en esta petición.
+
+    Devuelve ``{'url', 'model', 'key'}`` o ``None``.  La clave se usa sólo
+    mientras dura la petición: nunca se guarda en disco ni se registra.
+    """
+    if not isinstance(proveedor, dict):
+        return None
+    url = str(proveedor.get("url") or "").strip().rstrip("/")
+    model = str(proveedor.get("model") or "").strip()
+    if not url or not model:
+        return None
+    if not url.startswith(("http://", "https://")):
+        return None
+    return {"url": url, "model": model,
+            "key": str(proveedor.get("key") or "").strip()}
 
 
-def configurado():
-    return _tiene_proveedor() or _fallback_activo()
+def _proveedor_efectivo(proveedor=None):
+    """Proveedor de la petición o, si no hay, el configurado en el entorno."""
+    normal = _normalizar_proveedor(proveedor)
+    if normal:
+        return normal
+    url = os.environ.get("LOGICA_IA_URL", "").strip().rstrip("/")
+    model = os.environ.get("LOGICA_IA_MODEL", "").strip()
+    if url and model:
+        return {"url": url, "model": model,
+                "key": os.environ.get("LOGICA_IA_KEY", "").strip()}
+    return None
 
 
-def modelo():
-    if _tiene_proveedor():
-        return os.environ["LOGICA_IA_MODEL"]
+def _tiene_proveedor(proveedor=None):
+    return _proveedor_efectivo(proveedor) is not None
+
+
+def configurado(proveedor=None):
+    return _tiene_proveedor(proveedor) or _fallback_activo()
+
+
+def modelo(proveedor=None):
+    p = _proveedor_efectivo(proveedor)
+    if p:
+        return p["model"]
     return FALLBACK_MODEL if _fallback_activo() else ""
 
 
-def gratuita():
+def gratuita(proveedor=None):
     """True si se está usando el servicio externo sin clave."""
-    return not _tiene_proveedor() and _fallback_activo()
+    return not _tiene_proveedor(proveedor) and _fallback_activo()
 
 
 def busqueda_activa():
@@ -117,10 +150,11 @@ def busqueda_activa():
         "1", "si", "sí", "true", "yes", "on")
 
 
-def _endpoint():
-    if not _tiene_proveedor():
+def _endpoint(proveedor=None):
+    p = _proveedor_efectivo(proveedor)
+    if not p:
         return FALLBACK_URL if _fallback_activo() else ""
-    url = os.environ.get("LOGICA_IA_URL", "").strip().rstrip("/")
+    url = p["url"]
     if not url.endswith("/chat/completions"):
         url += "/chat/completions"
     return url
@@ -204,25 +238,29 @@ def _normalizar_formulas(formulas):
 
 
 def formalizar(frases, cuantificado, general=False, indices=None,
-               formulas_actuales=None):
+               formulas_actuales=None, proveedor=None):
     """Devuelve ``{'formulas': [...], 'vocab': {...}}`` o ``None``.
 
     ``general`` hace que la búsqueda combine resultados del profesor con una
     búsqueda general.  ``indices`` limita la búsqueda a las frases dudosas.
     ``formulas_actuales`` acompaña la formalización que no ha permitido
-    deducir para pedir a la IA que localice y corrija el error.
+    deducir para pedir a la IA que localice y corrija el error.  ``proveedor``
+    permite usar una URL, un modelo y una clave enviados por el navegador en
+    esta petición concreta, sin modificar la configuración del servidor.
     """
-    if not configurado() or not frases:
+    if not configurado(proveedor) or not frases:
         return None
 
-    clave_cache = _clave_cache(frases, cuantificado, formulas_actuales)
+    clave_cache = _clave_cache(frases, cuantificado, formulas_actuales,
+                               proveedor)
     cacheado = _leer_cache(clave_cache)
     if cacheado is None and formulas_actuales:
         # Si la formalización acaba de consultar A.E., reutilizamos aquella
         # propuesta para la deducción en vez de hacer otra petición seguida
         # (el servicio gratuito sólo permite una cada 30 s).  No se reutiliza
         # si es exactamente la formalización que acaba de fallar.
-        previo = _leer_cache(_clave_cache(frases, cuantificado, None))
+        previo = _leer_cache(_clave_cache(frases, cuantificado, None,
+                                          proveedor))
         if previo and tuple(previo["formulas"]) != tuple(formulas_actuales):
             cacheado = previo
     if cacheado is not None:
@@ -263,14 +301,14 @@ def formalizar(frases, cuantificado, general=False, indices=None,
                         "que no correspondan y no inventes reglas.")
 
     cuerpo = {
-        "model": modelo(),
+        "model": modelo(proveedor),
         "temperature": 0,
         "messages": [
             {"role": "system", "content": sistema},
             {"role": "user", "content": usuario},
         ],
     }
-    if not _tiene_proveedor():
+    if not _tiene_proveedor(proveedor):
         # El servicio gratuito pide identificar la aplicación para sus límites.
         cuerpo["referrer"] = "logica-deduccion"
     # Algunos proveedores (por ejemplo, Groq detrás de Cloudflare) rechazan
@@ -279,12 +317,13 @@ def formalizar(frases, cuantificado, general=False, indices=None,
         "Content-Type": "application/json",
         "User-Agent": "LogicaApp/%s" % VERSION,
     }
-    clave = os.environ.get("LOGICA_IA_KEY")
+    efectivo = _proveedor_efectivo(proveedor)
+    clave = efectivo["key"] if efectivo else ""
     if clave:
         cabeceras["Authorization"] = "Bearer " + clave
 
     peticion = urllib.request.Request(
-        _endpoint(), data=json.dumps(cuerpo).encode("utf-8"),
+        _endpoint(proveedor), data=json.dumps(cuerpo).encode("utf-8"),
         headers=cabeceras, method="POST")
     espera = float(os.environ.get("LOGICA_IA_TIMEOUT", TIMEOUT_POR_DEFECTO))
 
@@ -293,13 +332,13 @@ def formalizar(frases, cuantificado, general=False, indices=None,
             return json.loads(respuesta.read().decode("utf-8"))
 
     try:
-        if not _tiene_proveedor():
-            _turno_gratuito()
+        if not _tiene_proveedor(proveedor):
+            _turno_gratuito(proveedor)
         datos = enviar()
     except urllib.error.HTTPError as exc:
         # El servicio gratuito devuelve 402/429 cuando se hacen dos consultas
         # seguidas.  Reintentamos una vez tras la espera que él mismo indica.
-        if _tiene_proveedor() or exc.code not in (402, 429):
+        if _tiene_proveedor(proveedor) or exc.code not in (402, 429):
             return None
         demora = 7
         try:

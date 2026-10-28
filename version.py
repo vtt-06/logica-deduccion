@@ -7,4 +7,4 @@ El número principal no tiene límite.  Los números secundario y terciario
 siempre van de 0 a 9.
 """
 
-VERSION = "2.1.6"
+VERSION = "2.1.7"

@@ -258,7 +258,7 @@ def _vocab_con_textos(formulas, textos, form, quantified):
     return vocab
 
 
-def api_formalizar(data):
+def api_formalizar(data, proveedor=None):
     frases = _frases(data)
     if len(frases) < 2:
         return {"ok": False,
@@ -334,13 +334,13 @@ def api_formalizar(data):
 
     indices_ia = [i for i, item in enumerate(items) if necesita_ia(item)]
     motivo_ia = "manual" if forzar_ia else ("baja_confianza" if indices_ia else "")
-    if (forzar_ia or indices_ia) and asistente_ia.configurado():
+    if (forzar_ia or indices_ia) and asistente_ia.configurado(proveedor):
         indices_busqueda = (list(range(min(3, len(frases)))) if forzar_ia
                             else indices_ia[:3])
         propuesta = asistente_ia.formalizar(
             frases, quantified,
             general=forzar_ia or bool(indices_ia),
-            indices=indices_busqueda)
+            indices=indices_busqueda, proveedor=proveedor)
         if propuesta:
             nuevas, validas = [], True
             for texto in propuesta["formulas"]:
@@ -374,7 +374,7 @@ def api_formalizar(data):
                             "válidas para las frases marcadas; se mantiene la "
                             "formalización local.")
         elif forzar_ia:
-            if asistente_ia.gratuita():
+            if asistente_ia.gratuita(proveedor):
                 aviso_ia = ("No se ha podido consultar la ayuda exterior "
                             "(A.E.). El servicio gratuito admite una consulta "
                             "cada 30 segundos y puede estar saturado. Espera "
@@ -860,14 +860,15 @@ def _legado_sin_duplicar(datos):
     return resultado
 
 
-def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False):
+def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False,
+                               proveedor=None):
     """Pide a la IA una formalización alternativa cuando no hay deducción.
 
     La propuesta se comprueba siempre con el motor local: si la IA cambia una
     fórmula y con ella sí se deduce la conclusión, se devuelve esa prueba.
     Nunca se acepta una deducción sin verificarla.
     """
-    if not asistente_ia.configurado():
+    if not asistente_ia.configurado(proveedor):
         return None
     frases = data.get("sentences")
     if not isinstance(frases, list) or len(frases) != len(formulas):
@@ -878,9 +879,10 @@ def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False):
 
     propuesta = asistente_ia.formalizar(
         frases, cuantificado, general=True,
-        formulas_actuales=[render(f) for f in formulas])
+        formulas_actuales=[render(f) for f in formulas],
+        proveedor=proveedor)
     if not propuesta:
-        if asistente_ia.gratuita():
+        if asistente_ia.gratuita(proveedor):
             aviso = ("No se ha podido consultar la ayuda exterior (A.E.). "
                      "El servicio gratuito admite una consulta cada 30 "
                      "segundos y puede estar saturado. Espera medio minuto "
@@ -941,7 +943,7 @@ def _ayuda_exterior_deduccion(data, formulas, cuantificado, forzar=False):
     }
 
 
-def api_deducir(data):
+def api_deducir(data, proveedor=None):
     crudas = data.get("formulas", [])
     if not isinstance(crudas, list) or len(crudas) < 2:
         return {"ok": False,
@@ -985,7 +987,8 @@ def api_deducir(data):
                 % (indice + 1, render(corregida)))
         else:
             ayuda = _ayuda_exterior_deduccion(
-                data, formulas, cuantificado, forzar=forzar_ia)
+                data, formulas, cuantificado, forzar=forzar_ia,
+                proveedor=proveedor)
             if ayuda is not None and ayuda.get("lines") is not None:
                 premisas = ayuda["premisas"]
                 meta = ayuda["meta"]
@@ -1004,7 +1007,7 @@ def api_deducir(data):
                          "premisas (revisa si falta alguna premisa, como el "
                          "antecedente de un condicional) o que haya que "
                          "corregir alguna fórmula.")
-                if not asistente_ia.configurado():
+                if not asistente_ia.configurado(proveedor):
                     error += (" La ayuda exterior (A.E.) no está configurada "
                               "en este servidor.")
                 elif ayuda is None:
@@ -1014,8 +1017,8 @@ def api_deducir(data):
                     error += " " + ayuda["aviso"]
                 return {"ok": False, "error": error,
                         "ia_aplicada": False,
-                        "ia": asistente_ia.configurado(),
-                        "puede_ae": asistente_ia.configurado()}
+                        "ia": asistente_ia.configurado(proveedor),
+                        "puede_ae": asistente_ia.configurado(proveedor)}
 
     vistas = _vistas_de_prueba(lines)
     plain = formato_libro(lines)
@@ -1145,16 +1148,30 @@ class Handler(BaseHTTPRequestHandler):
             self._json(api_memoria(parse_qs(urlparse(self.path).query)))
             return
         if ruta == "/api/aprendizaje":
+            proveedor = self._proveedor_peticion()
             datos = MEMORIA.estadisticas()
             self._json({"ok": True, "activo": True,
                         "aprendizaje": APRENDIZAJE is not None, **datos,
                         "version": VERSION,
-                        "ia": asistente_ia.configurado(),
+                        "ia": asistente_ia.configurado(proveedor),
                         "busqueda": asistente_ia.busqueda_activa(),
-                        "modelo": asistente_ia.modelo(),
-                        "gratuita": asistente_ia.gratuita()})
+                        "modelo": asistente_ia.modelo(proveedor),
+                        "gratuita": asistente_ia.gratuita(proveedor)})
             return
         self._estatico(ruta)
+
+    def _proveedor_peticion(self):
+        """Proveedor de A.E. enviado por el navegador para esta petición.
+
+        La clave vive sólo en la memoria de la petición: no se escribe en
+        disco ni se incluye en los registros del servidor.
+        """
+        url = (self.headers.get("X-Logica-IA-URL") or "").strip()
+        model = (self.headers.get("X-Logica-IA-MODEL") or "").strip()
+        if not url or not model:
+            return None
+        return {"url": url, "model": model,
+                "key": (self.headers.get("X-Logica-IA-KEY") or "").strip()}
 
     def do_POST(self):
         ruta = urlparse(self.path).path
@@ -1165,10 +1182,11 @@ class Handler(BaseHTTPRequestHandler):
                        400)
             return
 
+        proveedor = self._proveedor_peticion()
         if ruta == "/api/formalizar":
-            self._json(api_formalizar(data))
+            self._json(api_formalizar(data, proveedor=proveedor))
         elif ruta == "/api/deducir":
-            self._json(api_deducir(data))
+            self._json(api_deducir(data, proveedor=proveedor))
         elif ruta == "/api/tabla-verdad":
             self._json(api_tabla_verdad(data))
         else:

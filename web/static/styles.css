@@ -2692,3 +2692,63 @@ body.menu-lateral-abierto { overflow: hidden; }
   .teoria-resumen-card__lista-doble { grid-template-columns: 1fr; }
   .teoria-resumen-card li { font-size: 0.84rem; }
 }
+
+/* A.E. con la clave del navegador */
+.panel-ia {
+  margin-top: 1rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radio-peq);
+  border: 1px dashed rgba(157, 78, 221, 0.35);
+  background: rgba(157, 78, 221, 0.04);
+  font-size: 0.85rem;
+}
+.panel-ia summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--tinta-suave);
+}
+.panel-ia__intro {
+  margin: 0.6rem 0;
+  color: var(--gris);
+  font-size: 0.8rem;
+}
+.panel-ia__campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.6rem;
+}
+.panel-ia__campos label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--tinta-suave);
+}
+.panel-ia__campos input {
+  padding: 0.45rem 0.55rem;
+  border: 1px solid rgba(106, 44, 145, 0.25);
+  border-radius: var(--radio-peq);
+  background: #fff;
+  font: inherit;
+  color: var(--tinta);
+}
+.panel-ia__campos input:focus {
+  outline: 2px solid rgba(157, 78, 221, 0.4);
+  outline-offset: 1px;
+}
+.panel-ia__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+.panel-ia__acciones .boton {
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+  min-height: 36px;
+}
+.panel-ia__estado {
+  margin: 0.55rem 0 0;
+  color: var(--gris);
+  font-size: 0.78rem;
+}

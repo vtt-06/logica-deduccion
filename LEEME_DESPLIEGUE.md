@@ -57,6 +57,12 @@ sólo en las variables de entorno de Render. Después de añadirla, pulsa
 **Manual Deploy**. Si la clave funciona, el pie de la página mostrará
 «Ayuda exterior (A.E.) conectada».
 
+También puedes usar tu clave sin tocar Render: en el paso 2 de la web, abre
+«A.E. con tu propia clave», escribe la dirección, el modelo y la clave, y
+pulsa **Guardar**. Se guarda sólo en el navegador y viaja con cada consulta;
+el servidor no la escribe en disco ni la incluye en sus registros. El botón
+**Quitar** borra esa configuración y vuelve a la del servidor.
+
 Con la ayuda exterior activa, si una formalización no permite encontrar la
 deducción, la web consulta al modelo una formalización alternativa. La
 propuesta se comprueba con el motor local antes de mostrarla y las fórmulas
