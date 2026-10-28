@@ -2752,3 +2752,25 @@ body.menu-lateral-abierto { overflow: hidden; }
   color: var(--gris);
   font-size: 0.78rem;
 }
+
+/* Instalación como aplicación (PWA) */
+.cabecera__instalar {
+  margin-top: 1rem;
+}
+.boton--instalar {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.45);
+  padding: 0.5rem 1rem;
+  min-height: 40px;
+  font-size: 0.88rem;
+}
+.boton--instalar:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.24);
+}
+.cabecera__aviso-instalar {
+  margin: 0.6rem 0 0;
+  max-width: 42rem;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.9);
+}

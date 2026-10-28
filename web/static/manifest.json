@@ -1,0 +1,32 @@
+{
+  "name": "Lógica — deducción asistida",
+  "short_name": "Lógica",
+  "description": "Formaliza frases en español y genera deducciones paso a paso con las reglas del curso.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#fff8f2",
+  "theme_color": "#3c096c",
+  "categories": ["education", "productivity"],
+  "icons": [
+    {
+      "src": "/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

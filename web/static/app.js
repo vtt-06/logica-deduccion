@@ -2168,9 +2168,64 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Instalación como aplicación (PWA)                                  */
+  /* ------------------------------------------------------------------ */
+  function configurarInstalacion() {
+    const boton = $("#btn-instalar-app");
+    const avisoInstalar = $("#aviso-instalar");
+    if (!boton) return;
+
+    const instalada =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    if (!instalada) boton.hidden = false;
+
+    let prompt = null;
+    window.addEventListener("beforeinstallprompt", (evento) => {
+      evento.preventDefault();
+      prompt = evento;
+      boton.hidden = false;
+    });
+    window.addEventListener("appinstalled", () => {
+      boton.hidden = true;
+      if (avisoInstalar) avisoInstalar.hidden = true;
+    });
+
+    boton.addEventListener("click", async () => {
+      if (prompt) {
+        prompt.prompt();
+        try {
+          await prompt.userChoice;
+        } catch (error) {
+          /* el navegador puede cancelar el diálogo */
+        }
+        prompt = null;
+        boton.hidden = true;
+        return;
+      }
+      if (avisoInstalar) {
+        avisoInstalar.hidden = false;
+        avisoInstalar.textContent =
+          "Para instalarla, usa el icono de instalar de la barra de " +
+          "direcciones (Chrome o Edge). En iPhone o iPad, pulsa Compartir " +
+          "y después «Añadir a pantalla de inicio».";
+      }
+    });
+  }
+
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js").catch(() => {
+        /* sin service worker la web sigue funcionando */
+      });
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Arranque                                                           */
   /* ------------------------------------------------------------------ */
   configurarProveedorIA();
+  configurarInstalacion();
   restaurarBorrador();
   if (!area.value) {
     area.value = EJEMPLOS.corro.texto;
