@@ -2072,6 +2072,603 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Tipo test de teoría                                                */
+  /* ------------------------------------------------------------------ */
+  const PREGUNTAS_TEST = [
+    {
+      tema: "Formalización",
+      pregunta: "¿Cuál es la formalización correcta de «Si llueve, la calle se moja»?",
+      opciones: ["p → q", "p ∧ q", "q → p", "¬p → q"],
+      correcta: 0,
+      explicacion: "El antecedente es «llueve» (p) y el consecuente «la calle se moja» (q). El condicional va del antecedente al consecuente: p → q."
+    },
+    {
+      tema: "Formalización",
+      pregunta: "¿Cómo se formaliza «Ni llueve ni hace frío»?",
+      opciones: ["¬p ∧ ¬q", "p ∨ q", "¬p ∨ ¬q", "p → q"],
+      correcta: 0,
+      explicacion: "«Ni… ni…» niega cada uno de los dos enunciados y los une con conjunción: ¬p ∧ ¬q. Es equivalente a ¬(p ∨ q), pero no a ¬p ∨ ¬q."
+    },
+    {
+      tema: "Formalización",
+      pregunta: "«A a menos que B» se formaliza como:",
+      opciones: ["p ∨ q", "p ∧ q", "¬p → q", "p → q"],
+      correcta: 0,
+      explicacion: "«p a menos que q» significa que p ocurre salvo si ocurre q; equivale a p ∨ q y también a ¬q → p."
+    },
+    {
+      tema: "Formalización",
+      pregunta: "¿Qué formaliza «A solo si B»?",
+      opciones: ["p → q", "q → p", "p ∧ q", "p ↔ q"],
+      correcta: 0,
+      explicacion: "«A solo si B» establece que B es condición necesaria de A: si se da A, entonces se da B, es decir, p → q."
+    },
+    {
+      tema: "Formalización",
+      pregunta: "«B es condición necesaria para A» equivale a:",
+      opciones: ["p → q", "q → p", "p ∧ q", "¬p → ¬q"],
+      correcta: 0,
+      explicacion: "Si B es necesaria para A, no puede haber A sin B: A implica B, esto es, p → q."
+    },
+    {
+      tema: "Formalización",
+      pregunta: "«B es condición suficiente para A» equivale a:",
+      opciones: ["q → p", "p → q", "p ∧ q", "p ↔ q"],
+      correcta: 0,
+      explicacion: "Si B es suficiente para A, basta con que se dé B para que se dé A: q → p."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "¿Cuál es la negación de p → q?",
+      opciones: ["p ∧ ¬q", "¬p ∧ q", "¬p ∨ q", "¬q → ¬p"],
+      correcta: 0,
+      explicacion: "Un condicional solo falla cuando el antecedente es verdadero y el consecuente falso. Por tanto, ¬(p → q) ≡ p ∧ ¬q."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "Por las leyes de De Morgan, ¬(p ∧ q) equivale a:",
+      opciones: ["¬p ∨ ¬q", "¬p ∧ ¬q", "p ∨ q", "p → ¬q"],
+      correcta: 0,
+      explicacion: "La negación de una conjunción es la disyunción de las negaciones: ¬(p ∧ q) ≡ ¬p ∨ ¬q."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "Por las leyes de De Morgan, ¬(p ∨ q) equivale a:",
+      opciones: ["¬p ∧ ¬q", "¬p ∨ ¬q", "p ∧ q", "¬p → q"],
+      correcta: 0,
+      explicacion: "La negación de una disyunción es la conjunción de las negaciones: ¬(p ∨ q) ≡ ¬p ∧ ¬q."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "¿A qué fórmula equivale p → q?",
+      opciones: ["¬p ∨ q", "p ∨ ¬q", "¬q → p", "p ∧ ¬q"],
+      correcta: 0,
+      explicacion: "El condicional material equivale a la disyunción de la negación del antecedente con el consecuente: p → q ≡ ¬p ∨ q."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "La contrapositiva de p → q es:",
+      opciones: ["¬q → ¬p", "q → p", "¬p → ¬q", "p → ¬q"],
+      correcta: 0,
+      explicacion: "La contrapositiva niega y permuta antecedente y consecuente: ¬q → ¬p. Es lógicamente equivalente al condicional original."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "El converso de p → q es:",
+      opciones: ["q → p", "¬q → ¬p", "¬p → ¬q", "p ∧ q"],
+      correcta: 0,
+      explicacion: "El converso intercambia antecedente y consecuente: q → p. No es equivalente a p → q."
+    },
+    {
+      tema: "Conectivas",
+      pregunta: "La doble negación ¬¬p equivale a:",
+      opciones: ["p", "¬p", "p ∨ ¬p", "⊥"],
+      correcta: 0,
+      explicacion: "Negar dos veces una fórmula devuelve su valor de verdad original: ¬¬p ≡ p."
+    },
+    {
+      tema: "Precedencia",
+      pregunta: "Según la precedencia habitual, ¿cómo se lee ¬p ∧ q?",
+      opciones: ["(¬p) ∧ q", "¬(p ∧ q)", "¬(p ∨ q)", "(¬p) ∨ q"],
+      correcta: 0,
+      explicacion: "La negación liga más fuerte que la conjunción, así que ¬p ∧ q significa (¬p) ∧ q, no ¬(p ∧ q)."
+    },
+    {
+      tema: "Precedencia",
+      pregunta: "Si se asocia a la derecha, p → q → r se lee:",
+      opciones: ["p → (q → r)", "(p → q) → r", "(p ∧ q) → r", "p ∧ (q → r)"],
+      correcta: 0,
+      explicacion: "El condicional se asocia a la derecha: p → q → r significa p → (q → r). Sin paréntesis conviene escribirlo explícitamente."
+    },
+    {
+      tema: "Tablas de verdad",
+      pregunta: "El condicional p → q es falso únicamente cuando:",
+      opciones: ["p es verdadera y q falsa", "p es falsa y q verdadera", "ambas son falsas", "ambas son verdaderas"],
+      correcta: 0,
+      explicacion: "El condicional solo es falso si el antecedente es verdadero y el consecuente falso. En los demás casos es verdadero."
+    },
+    {
+      tema: "Tablas de verdad",
+      pregunta: "La conjunción p ∧ q es verdadera cuando:",
+      opciones: ["p y q son verdaderas", "al menos una es verdadera", "ambas son falsas", "p es falsa y q verdadera"],
+      correcta: 0,
+      explicacion: "La conjunción exige que ambos conjunctos sean verdaderos; basta que uno sea falso para que toda la conjunción sea falsa."
+    },
+    {
+      tema: "Tablas de verdad",
+      pregunta: "La disyunción inclusiva p ∨ q es falsa cuando:",
+      opciones: ["ambas son falsas", "ambas son verdaderas", "p es verdadera y q falsa", "p es falsa y q verdadera"],
+      correcta: 0,
+      explicacion: "La disyunción inclusiva es verdadera si al menos una de las dos fórmulas es verdadera; solo es falsa cuando ambas lo son."
+    },
+    {
+      tema: "Tablas de verdad",
+      pregunta: "El bicondicional p ↔ q es verdadero cuando:",
+      opciones: ["p y q tienen el mismo valor de verdad", "p es verdadera y q falsa", "p es falsa y q verdadera", "q es verdadera siempre"],
+      correcta: 0,
+      explicacion: "El bicondicional afirma que ambos lados tienen el mismo valor: es verdadero si ambos son verdaderos o ambos falsos."
+    },
+    {
+      tema: "Semántica",
+      pregunta: "Una tautología es una fórmula que:",
+      opciones: ["es verdadera en toda interpretación", "es falsa en toda interpretación", "es verdadera en algunas interpretaciones y falsa en otras", "no contiene conectivas"],
+      correcta: 0,
+      explicacion: "Una tautología o fórmula lógicamente válida es verdadera bajo cualquier valoración o interpretación."
+    },
+    {
+      tema: "Semántica",
+      pregunta: "Una contradicción es una fórmula que:",
+      opciones: ["es falsa en toda interpretación", "es verdadera en toda interpretación", "puede ser verdadera o falsa", "solo contiene disyunciones"],
+      correcta: 0,
+      explicacion: "Una contradicción es insatisfacible: no hay ninguna interpretación que la haga verdadera."
+    },
+    {
+      tema: "Semántica",
+      pregunta: "Una fórmula contingente es aquella que:",
+      opciones: ["es verdadera en unas interpretaciones y falsa en otras", "es siempre verdadera", "es siempre falsa", "no tiene tabla de verdad"],
+      correcta: 0,
+      explicacion: "Una fórmula contingente depende de la interpretación: en unas es verdadera y en otras falsa."
+    },
+    {
+      tema: "Argumentos",
+      pregunta: "Un argumento es válido cuando:",
+      opciones: ["no hay ninguna interpretación con todas las premisas verdaderas y la conclusión falsa", "todas sus premisas son verdaderas", "su conclusión es verdadera", "tiene al menos tres premisas"],
+      correcta: 0,
+      explicacion: "La validez es una relación entre premisas y conclusión: es imposible que las premisas sean verdaderas y la conclusión falsa."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p → q y p, ¿qué se deduce por modus ponens?",
+      opciones: ["q", "¬p", "p ∧ q", "¬q"],
+      correcta: 0,
+      explicacion: "El modus ponens afirma el antecedente para obtener el consecuente: de p → q y p se deduce q."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p → q y ¬q, ¿qué se deduce por modus tollens?",
+      opciones: ["¬p", "q", "p", "p ∨ q"],
+      correcta: 0,
+      explicacion: "El modus tollens niega el consecuente para negar el antecedente: de p → q y ¬q se deduce ¬p."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p → q y q → r, ¿qué se deduce por silogismo hipotético?",
+      opciones: ["p → r", "r → p", "p ∧ r", "q → p"],
+      correcta: 0,
+      explicacion: "El silogismo hipotético encadena dos condicionales: de p → q y q → r se deduce p → r."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p ∨ q y ¬p, ¿qué se deduce por silogismo disyuntivo?",
+      opciones: ["q", "p", "¬q", "p ∧ q"],
+      correcta: 0,
+      explicacion: "El silogismo disyuntivo elimina el disyunto negado: si se da p ∨ q y no se da p, entonces se da q."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p y q, ¿qué se deduce por introducción de la conjunción?",
+      opciones: ["p ∧ q", "p ∨ q", "p → q", "¬p ∧ ¬q"],
+      correcta: 0,
+      explicacion: "La regla de introducción de la conjunción permite unir dos fórmulas demostradas: de p y q se deduce p ∧ q."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p ∧ q, ¿qué se deduce por simplificación?",
+      opciones: ["p", "q → p", "p ∨ q", "¬q"],
+      correcta: 0,
+      explicacion: "La simplificación extrae cualquiera de los dos conjunctos: de p ∧ q se deduce p (y también q)."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De p, ¿qué se deduce por adición?",
+      opciones: ["p ∨ q", "p ∧ q", "q → p", "¬p"],
+      correcta: 0,
+      explicacion: "La adición permite añadir una disyunción con cualquier fórmula: de p se deduce p ∨ q."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "La ley de absorción permite deducir de p → q:",
+      opciones: ["p → (p ∧ q)", "p ∧ q", "q → p", "p → (q ∧ ¬p)"],
+      correcta: 0,
+      explicacion: "La absorción reescribe el condicional como p → (p ∧ q): si p implica q, entonces p implica p y q."
+    },
+    {
+      tema: "Reglas de inferencia",
+      pregunta: "De (p → q) ∧ (r → s) y p ∨ r, ¿qué se deduce por dilema constructivo?",
+      opciones: ["q ∨ s", "q ∧ s", "p ∨ s", "¬q ∨ ¬s"],
+      correcta: 0,
+      explicacion: "El dilema constructivo combina dos condicionales con la disyunción de sus antecedentes para obtener la disyunción de sus consecuentes: q ∨ s."
+    },
+    {
+      tema: "Métodos de prueba",
+      pregunta: "Para demostrar φ → ψ mediante deducción condicional se debe:",
+      opciones: ["suponer φ y deducir ψ", "suponer ¬φ y deducir ψ", "suponer φ y deducir ¬ψ", "demostrar φ y ψ por separado"],
+      correcta: 0,
+      explicacion: "La deducción condicional introduce el antecedente como supuesto: se supone φ, se deriva ψ y se concluye φ → ψ."
+    },
+    {
+      tema: "Métodos de prueba",
+      pregunta: "La reducción al absurdo para demostrar φ consiste en:",
+      opciones: ["suponer ¬φ y llegar a una contradicción", "suponer φ y llegar a una contradicción", "demostrar φ por tablas de verdad", "suponer φ y deducir φ"],
+      correcta: 0,
+      explicacion: "Se supone la negación de lo que se quiere probar; si de ahí se sigue una contradicción, se concluye φ."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "∀x P(x) es verdadera en una interpretación cuando:",
+      opciones: ["P se satisface para todos los elementos del dominio", "P se satisface para algún elemento del dominio", "P nunca se satisface", "el dominio es vacío"],
+      correcta: 0,
+      explicacion: "El cuantificador universal exige que la fórmula se cumpla para cada elemento del dominio."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "∃x P(x) es verdadera en una interpretación cuando:",
+      opciones: ["P se satisface para al menos un elemento del dominio", "P se satisface para todos los elementos", "P no se satisface para ninguno", "el dominio tiene un solo elemento"],
+      correcta: 0,
+      explicacion: "El cuantificador existencial solo pide que haya algún elemento del dominio que cumpla la fórmula."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "La negación de ∀x P(x) es:",
+      opciones: ["∃x ¬P(x)", "∀x ¬P(x)", "¬∃x P(x)", "∃x P(x)"],
+      correcta: 0,
+      explicacion: "Negar que todos cumplan P equivale a afirmar que alguno no cumple P: ¬∀x P(x) ≡ ∃x ¬P(x)."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "La negación de ∃x P(x) es:",
+      opciones: ["∀x ¬P(x)", "∃x ¬P(x)", "¬∀x P(x)", "∀x P(x)"],
+      correcta: 0,
+      explicacion: "Negar que exista algún elemento que cumpla P equivale a decir que ninguno lo cumple: ¬∃x P(x) ≡ ∀x ¬P(x)."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "«Todos los hombres son mortales» se formaliza como:",
+      opciones: ["∀x (H(x) → M(x))", "∀x (H(x) ∧ M(x))", "∃x (H(x) → M(x))", "∃x (H(x) ∧ M(x))"],
+      correcta: 0,
+      explicacion: "Una frase universal con condición se formaliza con un condicional dentro del universal: para todo x, si es hombre entonces es mortal."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "«Algún hombre es mortal» se formaliza como:",
+      opciones: ["∃x (H(x) ∧ M(x))", "∃x (H(x) → M(x))", "∀x (H(x) → M(x))", "∀x (H(x) ∧ M(x))"],
+      correcta: 0,
+      explicacion: "Una frase existencial con condición se formaliza con una conjunción dentro del existencial: hay algún x que es hombre y es mortal."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "«Ningún A es B» se formaliza como:",
+      opciones: ["∀x (A(x) → ¬B(x))", "∃x (A(x) ∧ ¬B(x))", "∀x (A(x) → B(x))", "¬∀x (A(x) → B(x))"],
+      correcta: 0,
+      explicacion: "«Ningún A es B» afirma que todo lo que sea A no es B: ∀x (A(x) → ¬B(x)), equivalente a ¬∃x (A(x) ∧ B(x))."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "«No todos los A son B» se formaliza como:",
+      opciones: ["∃x (A(x) ∧ ¬B(x))", "∀x (A(x) → ¬B(x))", "¬∃x (A(x) ∧ B(x))", "∃x (¬A(x) ∧ B(x))"],
+      correcta: 0,
+      explicacion: "«No todos los A son B» equivale a que existe algún A que no es B: ∃x (A(x) ∧ ¬B(x))."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "Una ocurrencia de una variable está ligada cuando:",
+      opciones: ["está dentro del radio de acción de un cuantificador que la liga", "aparece al final de la fórmula", "está negada", "aparece en una fórmula atómica"],
+      correcta: 0,
+      explicacion: "Una variable queda ligada por el cuantificador cuyo radio de acción la incluye. Si no está en ese radio, la ocurrencia es libre."
+    },
+    {
+      tema: "Cuantificadores",
+      pregunta: "Una fórmula cerrada es aquella que:",
+      opciones: ["no tiene variables libres", "no tiene cuantificadores", "solo tiene variables libres", "no contiene negaciones"],
+      correcta: 0,
+      explicacion: "Una fórmula cerrada o enunciado no contiene ocurrencias libres de variables; todas están ligadas por cuantificadores."
+    },
+    {
+      tema: "Sistemas formales",
+      pregunta: "Un sistema formal está formado por:",
+      opciones: ["un alfabeto, reglas de formación, axiomas y reglas de inferencia", "solo axiomas", "un lenguaje natural y ejemplos", "una tabla de verdad y un diccionario"],
+      correcta: 0,
+      explicacion: "Un sistema formal especifica los símbolos, las fórmulas bien formadas, los axiomas y las reglas que permiten derivar fórmulas."
+    },
+    {
+      tema: "Sistemas formales",
+      pregunta: "Un sistema formal es consistente cuando:",
+      opciones: ["no se puede deducir una fórmula y su negación", "toda fórmula es demostrable", "tiene infinitos axiomas", "carece de reglas de inferencia"],
+      correcta: 0,
+      explicacion: "La consistencia exige que no sean demostrables a la vez una fórmula y su negación; de lo contrario el sistema sería trivial."
+    },
+    {
+      tema: "Sistemas formales",
+      pregunta: "Un sistema formal es completo cuando:",
+      opciones: ["toda fórmula lógicamente válida es demostrable en él", "no se puede deducir ninguna fórmula", "todas sus fórmulas son verdaderas", "solo demuestra tautologías triviales"],
+      correcta: 0,
+      explicacion: "La completitud semántica indica que todo lo lógicamente válido puede demostrarse dentro del sistema."
+    },
+    {
+      tema: "Sistemas formales",
+      pregunta: "En L, una demostración es:",
+      opciones: ["una sucesión finita de fórmulas donde cada una es axioma, premisa o consecuencia de reglas", "una tabla de verdad completa", "una interpretación del lenguaje", "una lista de símbolos sin reglas"],
+      correcta: 0,
+      explicacion: "Una demostración es una cadena finita y justificada de fórmulas: cada paso es un axioma, una premisa o se obtiene aplicando una regla."
+    },
+    {
+      tema: "Metateoría",
+      pregunta: "¿Qué lógica es decidible mediante tablas de verdad?",
+      opciones: ["La lógica de enunciados", "La lógica de predicados en general", "Ninguna lógica", "Solo la lógica modal"],
+      correcta: 0,
+      explicacion: "La lógica de enunciados es decidible: con un número finito de variables se puede construir su tabla de verdad. La lógica de predicados no es decidible en general."
+    },
+    {
+      tema: "Metateoría",
+      pregunta: "La diferencia entre verdad y demostrabilidad es que:",
+      opciones: ["la verdad es semántica y la demostrabilidad es sintáctica", "son exactamente lo mismo", "la verdad depende de los axiomas y la demostrabilidad de las interpretaciones", "solo existe la demostrabilidad"],
+      correcta: 0,
+      explicacion: "La verdad se evalúa en interpretaciones (semántica); la demostrabilidad depende de axiomas y reglas de inferencia (sintaxis)."
+    }
+  ];
+
+  const testEstado = {
+    orden: [],
+    indice: 0,
+    contestadas: 0,
+    aciertos: 0,
+    fallos: 0,
+    respondida: false,
+    opciones: []
+  };
+
+  function barajarTest(lista) {
+    const copia = lista.slice();
+    for (let i = copia.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copia[i], copia[j]] = [copia[j], copia[i]];
+    }
+    return copia;
+  }
+
+  function prepararOrdenTest() {
+    const nuevo = barajarTest(PREGUNTAS_TEST.map((_, i) => i));
+    if (PREGUNTAS_TEST.length > 1 &&
+        nuevo.join(",") === testEstado.orden.join(",")) {
+      [nuevo[0], nuevo[1]] = [nuevo[1], nuevo[0]];
+    }
+    testEstado.orden = nuevo;
+  }
+
+  const menuTest = $("#menu-test");
+  const testJuego = $("#test-juego");
+  const testResultados = $("#test-resultados");
+  const testTema = $("#test-tema");
+  const testNumero = $("#test-numero");
+  const testPregunta = $("#test-pregunta");
+  const testOpciones = $("#test-opciones");
+  const testFeedback = $("#test-feedback");
+  const testFeedbackTitulo = $("#test-feedback-titulo");
+  const testExplicacion = $("#test-explicacion");
+  const btnSiguienteTest = $("#btn-siguiente-test");
+  const testStatContestadas = $("#test-stat-contestadas");
+  const testStatAciertos = $("#test-stat-aciertos");
+  const testStatFallos = $("#test-stat-fallos");
+  const testStatPrecision = $("#test-stat-precision");
+  const testProgreso = $(".menu-test__progreso");
+  const testProgresoBarra = $("#test-progreso-barra");
+
+  function precisionTest() {
+    return testEstado.contestadas
+      ? Math.round((testEstado.aciertos / testEstado.contestadas) * 100)
+      : 0;
+  }
+
+  function actualizarEstadisticasTest() {
+    const precision = precisionTest();
+    if (testStatContestadas) {
+      testStatContestadas.textContent = testEstado.contestadas;
+    }
+    if (testStatAciertos) testStatAciertos.textContent = testEstado.aciertos;
+    if (testStatFallos) testStatFallos.textContent = testEstado.fallos;
+    if (testStatPrecision) testStatPrecision.textContent = precision + "%";
+    const porcentaje = PREGUNTAS_TEST.length
+      ? Math.round((testEstado.contestadas / PREGUNTAS_TEST.length) * 100)
+      : 0;
+    if (testProgresoBarra) testProgresoBarra.style.width = porcentaje + "%";
+    if (testProgreso) {
+      testProgreso.setAttribute("aria-valuenow", String(porcentaje));
+    }
+  }
+
+  function pintarPreguntaTest() {
+    if (!testPregunta || !testOpciones || !testEstado.orden.length) return;
+    const id = testEstado.orden[testEstado.indice];
+    const pregunta = PREGUNTAS_TEST[id];
+    if (!pregunta) return;
+
+    testEstado.respondida = false;
+    testEstado.opciones = barajarTest(
+      pregunta.opciones.map((texto, i) => ({
+        texto,
+        correcta: i === pregunta.correcta
+      }))
+    );
+
+    if (testTema) testTema.textContent = pregunta.tema;
+    if (testNumero) {
+      testNumero.textContent =
+        "Pregunta " + (testEstado.indice + 1) + " de " + PREGUNTAS_TEST.length;
+    }
+    testPregunta.textContent = pregunta.pregunta;
+    testOpciones.innerHTML = "";
+    const letras = ["A", "B", "C", "D"];
+
+    testEstado.opciones.forEach((opcion, i) => {
+      const boton = crear("button", "test-opcion");
+      boton.type = "button";
+      const letra = crear("span", "test-opcion__letra", letras[i] || "·");
+      letra.setAttribute("aria-hidden", "true");
+      const texto = crear("span", "test-opcion__texto", opcion.texto);
+      boton.append(letra, texto);
+      boton.addEventListener("click", () => responderTest(i));
+      testOpciones.append(boton);
+    });
+
+    if (testFeedback) testFeedback.hidden = true;
+    if (btnSiguienteTest) btnSiguienteTest.hidden = true;
+    if (testJuego) testJuego.hidden = false;
+    if (testResultados) testResultados.hidden = true;
+    actualizarEstadisticasTest();
+    if (menuTest) menuTest.scrollTop = 0;
+  }
+
+  function responderTest(indiceElegido) {
+    if (testEstado.respondida) return;
+    const id = testEstado.orden[testEstado.indice];
+    const pregunta = PREGUNTAS_TEST[id];
+    const elegida = testEstado.opciones[indiceElegido];
+    if (!pregunta || !elegida) return;
+
+    testEstado.respondida = true;
+    const botones = Array.from(testOpciones.children);
+    botones.forEach((boton, i) => {
+      boton.disabled = true;
+      if (testEstado.opciones[i].correcta) {
+        boton.classList.add("test-opcion--correcta");
+      }
+    });
+
+    if (elegida.correcta) {
+      testEstado.aciertos += 1;
+    } else {
+      testEstado.fallos += 1;
+      if (botones[indiceElegido]) {
+        botones[indiceElegido].classList.add("test-opcion--fallo");
+      }
+    }
+    testEstado.contestadas += 1;
+
+    if (testFeedback) testFeedback.hidden = false;
+    if (testFeedback) {
+      testFeedback.classList.toggle("test-feedback--fallo",
+        !elegida.correcta);
+    }
+    if (testFeedbackTitulo) {
+      if (elegida.correcta) {
+        testFeedbackTitulo.textContent = "¡Correcto!";
+      } else {
+        const correcta = testEstado.opciones.find((op) => op.correcta);
+        testFeedbackTitulo.textContent = correcta
+          ? "Incorrecto. La respuesta correcta es: " + correcta.texto
+          : "Incorrecto.";
+      }
+    }
+    if (testExplicacion) {
+      testExplicacion.textContent = pregunta.explicacion;
+    }
+    if (btnSiguienteTest) {
+      btnSiguienteTest.hidden = false;
+      const ultima = testEstado.indice >= testEstado.orden.length - 1;
+      btnSiguienteTest.textContent = ultima
+        ? "Ver resultados →"
+        : "Siguiente pregunta →";
+    }
+    actualizarEstadisticasTest();
+  }
+
+  function siguientePreguntaTest() {
+    if (!testEstado.respondida) return;
+    if (testEstado.indice >= testEstado.orden.length - 1) {
+      mostrarResultadosTest();
+      return;
+    }
+    testEstado.indice += 1;
+    pintarPreguntaTest();
+  }
+
+  function mostrarResultadosTest() {
+    if (!testResultados || !testJuego) return;
+    testJuego.hidden = true;
+    testResultados.hidden = false;
+    const precision = precisionTest();
+    const aciertos = $("#test-final-aciertos");
+    const fallos = $("#test-final-fallos");
+    const cifra = $("#test-final-precision");
+    const resumen = $("#test-resultados-resumen");
+    if (aciertos) aciertos.textContent = testEstado.aciertos;
+    if (fallos) fallos.textContent = testEstado.fallos;
+    if (cifra) cifra.textContent = precision + "%";
+    if (resumen) {
+      let mensaje = "Has acertado " + testEstado.aciertos + " de " +
+        testEstado.contestadas + " preguntas.";
+      if (precision >= 90) {
+        mensaje += " Dominas la teoría: repasa solo los detalles.";
+      } else if (precision >= 70) {
+        mensaje += " Buen nivel; conviene repasar los temas fallados.";
+      } else if (precision >= 50) {
+        mensaje += " Vas por buen camino, pero toca repasar la teoría.";
+      } else {
+        mensaje += " Merece la pena volver a la guía de teoría antes de repetir.";
+      }
+      resumen.textContent = mensaje;
+    }
+    if (menuTest) menuTest.scrollTop = 0;
+  }
+
+  function reiniciarTest() {
+    prepararOrdenTest();
+    testEstado.indice = 0;
+    testEstado.contestadas = 0;
+    testEstado.aciertos = 0;
+    testEstado.fallos = 0;
+    testEstado.respondida = false;
+    actualizarEstadisticasTest();
+    pintarPreguntaTest();
+  }
+
+  if (btnSiguienteTest) {
+    btnSiguienteTest.addEventListener("click", siguientePreguntaTest);
+  }
+  ["#btn-reiniciar-test", "#btn-reiniciar-test-final"].forEach((selector) => {
+    const boton = $(selector);
+    if (boton) boton.addEventListener("click", reiniciarTest);
+  });
+
+  const btnTest = $("#btn-test");
+  let menuTestControl = null;
+  if (btnTest && menuTest) {
+    menuTestControl = configurarMenuLateral({
+      menu: menuTest,
+      boton: btnTest,
+      botonCerrar: $("#btn-cerrar-test")
+    });
+    btnTest.addEventListener("click", () => {
+      if (!testEstado.orden.length) {
+        reiniciarTest();
+      }
+    });
+    prepararOrdenTest();
+    pintarPreguntaTest();
+    actualizarEstadisticasTest();
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Resplandor RGB que sigue al ratón                                  */
   /* ------------------------------------------------------------------ */
   const resplandor = $("#cursor-glow");
