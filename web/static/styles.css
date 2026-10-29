@@ -2774,3 +2774,51 @@ body.menu-lateral-abierto { overflow: hidden; }
   font-size: 0.82rem;
   color: rgba(255, 255, 255, 0.9);
 }
+
+/* Barra deslizante de símbolos lógicos */
+.simbolos-marquesina {
+  position: relative;
+  overflow: hidden;
+  margin: 1rem 0 0;
+  padding: 0.62rem 0;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.12);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%,
+                      #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 7%,
+              #000 93%, transparent);
+}
+.simbolos-marquesina__pista {
+  display: flex;
+  width: max-content;
+  animation: simbolos-derecha 32s linear infinite;
+  will-change: transform;
+}
+.simbolos-marquesina:hover .simbolos-marquesina__pista {
+  animation-play-state: paused;
+}
+.simbolos-marquesina__grupo {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding-right: 1.5rem;
+}
+.simbolos-marquesina__simbolo {
+  font-family: var(--mono);
+  font-size: 1.02rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.92);
+}
+@keyframes simbolos-derecha {
+  from { transform: translateX(-50%); }
+  to { transform: translateX(0); }
+}
+@media (max-width: 620px) {
+  .simbolos-marquesina__grupo {
+    gap: 1.1rem;
+    padding-right: 1.1rem;
+  }
+  .simbolos-marquesina__simbolo { font-size: 0.95rem; }
+}

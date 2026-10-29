@@ -2,7 +2,7 @@
    Estrategia: red primero para no servir versiones antiguas; si no hay
    conexión, se usa la copia guardada.  Las llamadas a /api/ nunca se
    cachean. */
-const CACHE = "logica-2.2.0";
+const CACHE = "logica-2.2.1";
 const RECURSOS = [
   "/",
   "/index.html",

@@ -4,7 +4,7 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.2.0.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.2.1.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
 Las reglas y la notación están tomadas de:

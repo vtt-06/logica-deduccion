@@ -2222,10 +2222,34 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Barra deslizante de símbolos lógicos                               */
+  /* ------------------------------------------------------------------ */
+  const SIMBOLOS_MARQUESINA = [
+    "¬", "∧", "∨", "→", "↔", "⊢", "∴", "∀", "∃",
+    "Λ", "V", "⊨", "≡", "≠", "⊥", "⊤", "⌈", "⌉", "−",
+  ];
+
+  function configurarMarquesinasSimbolos() {
+    $$("[data-simbolos]").forEach((barra) => {
+      const pista = crear("div", "simbolos-marquesina__pista");
+      for (let copia = 0; copia < 2; copia += 1) {
+        const grupo = crear("span", "simbolos-marquesina__grupo");
+        grupo.setAttribute("aria-hidden", "true");
+        SIMBOLOS_MARQUESINA.forEach((simbolo) => {
+          grupo.append(crear("span", "simbolos-marquesina__simbolo", simbolo));
+        });
+        pista.append(grupo);
+      }
+      barra.append(pista);
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Arranque                                                           */
   /* ------------------------------------------------------------------ */
   configurarProveedorIA();
   configurarInstalacion();
+  configurarMarquesinasSimbolos();
   restaurarBorrador();
   if (!area.value) {
     area.value = EJEMPLOS.corro.texto;
