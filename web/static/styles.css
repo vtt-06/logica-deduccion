@@ -143,20 +143,28 @@ code {
 }
 
 .marca__etiqueta {
-  margin: 0 0 0.15rem;
-  font-size: 0.75rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.72rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.78);
 }
 
 .cabecera h1 {
   margin: 0;
   font-family: var(--titulo);
-  font-weight: 700;
-  font-size: clamp(1.7rem, 4.6vw, 2.9rem);
-  line-height: 1.08;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  font-size: clamp(2.8rem, 8vw, 4.2rem);
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+}
+
+.marca__lema {
+  margin: 0.25rem 0 0;
+  font-family: var(--titulo);
+  font-size: clamp(1.15rem, 2.8vw, 1.55rem);
+  line-height: 1.15;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .cabecera__texto {
