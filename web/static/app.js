@@ -2831,9 +2831,21 @@
 
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("/sw.js").catch(() => {
+      navigator.serviceWorker.register("/sw.js").then((registro) => {
+        // Busca una versión nueva cada vez que se abre la app.
+        registro.update().catch(() => {});
+      }).catch(() => {
         /* sin service worker la web sigue funcionando */
       });
+    });
+
+    // Cuando el service worker nuevo toma el control, recarga una sola vez
+    // para que la página muestre al instante los archivos actualizados.
+    let recargandoPorActualizacion = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (recargandoPorActualizacion) return;
+      recargandoPorActualizacion = true;
+      window.location.reload();
     });
   }
 
