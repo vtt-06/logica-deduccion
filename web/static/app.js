@@ -1919,6 +1919,7 @@
   const avisoVerdad = $("#verdad-aviso");
   const resultadoVerdad = $("#verdad-resultado");
   const btnCalcularVerdad = $("#btn-calcular-verdad");
+  const btnVerdadAE = $("#btn-verdad-ae");
   let menuVerdadControl = null;
 
   function avisoVerdadTexto(texto) {
@@ -1930,6 +1931,7 @@
   function ponerCargandoVerdad(activo) {
     if (!btnCalcularVerdad) return;
     btnCalcularVerdad.disabled = activo;
+    if (btnVerdadAE) btnVerdadAE.disabled = activo;
     const texto = btnCalcularVerdad.querySelector(".verdad__calcular-texto");
     const cargando = btnCalcularVerdad.querySelector(
       ".verdad__calcular-cargando");
@@ -1975,6 +1977,11 @@
       datos.clasificacion));
     resultadoVerdad.append(resumen);
 
+    const nombreClase = etiquetas[datos.clasificacion] || datos.clasificacion;
+    resultadoVerdad.append(crear("p", "verdad__clasificacion " +
+      "verdad__clasificacion--" + datos.clasificacion,
+      "Clasificación: " + nombreClase));
+
     const variables = datos.variables || [];
     const filas = datos.filas || [];
     resultadoVerdad.append(crear("p", "verdad__detalle",
@@ -2010,7 +2017,7 @@
     resultadoVerdad.append(scroll);
   }
 
-  async function calcularTablaVerdad(evento) {
+  async function calcularTablaVerdad(evento, usarIA = false) {
     if (evento) evento.preventDefault();
     const formula = campoVerdad.value.trim();
     if (!formula) {
@@ -2023,11 +2030,20 @@
     try {
       const respuesta = await fetch("/api/tabla-verdad", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formula })
+        headers: { "Content-Type": "application/json", ...cabecerasIA() },
+        body: JSON.stringify({ formula, usar_ia: Boolean(usarIA) })
       });
       const datos = await respuesta.json();
-      if (!datos.ok) throw new Error(datos.error || "No se pudo generar la tabla.");
+      if (!datos.ok) {
+        if (btnVerdadAE) btnVerdadAE.hidden = !datos.puede_ae;
+        throw new Error(datos.error || "No se pudo generar la tabla.");
+      }
+      if (btnVerdadAE) btnVerdadAE.hidden = true;
+      if (datos.ia_aplicada) {
+        if (datos.formula) campoVerdad.value = datos.formula;
+        avisoVerdadTexto(datos.aviso_ia ||
+          "La ayuda exterior (A.E.) ha interpretado la fórmula.");
+      }
       localStorage.setItem("logica.verdad.formula", formula);
       renderTablaVerdad(datos);
     } catch (error) {
@@ -2039,6 +2055,9 @@
 
   if (formVerdad) {
     formVerdad.addEventListener("submit", calcularTablaVerdad);
+  }
+  if (btnVerdadAE) {
+    btnVerdadAE.addEventListener("click", () => calcularTablaVerdad(null, true));
   }
   $$(".verdad__chip").forEach((chip) => {
     chip.addEventListener("click", () => {

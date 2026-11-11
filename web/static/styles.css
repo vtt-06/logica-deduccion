@@ -1543,6 +1543,7 @@ body.menu-lateral-abierto { overflow: hidden; }
   align-items: flex-start;
   justify-content: space-between;
   gap: 1.2rem;
+  overflow: hidden;
   padding: clamp(1.2rem, 3vw, 2rem);
   border: 1px solid rgba(255, 255, 255, 0.42);
   border-radius: 28px;
@@ -1573,6 +1574,10 @@ body.menu-lateral-abierto { overflow: hidden; }
   margin: 0.6rem 0 0;
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.95rem;
+}
+.menu-teoria__cabecera > div {
+  flex: 1 1 0;
+  min-width: 0;
 }
 .menu-teoria__cerrar,
 .teoria-volver {
@@ -2439,6 +2444,37 @@ body.menu-lateral-abierto { overflow: hidden; }
   color: #4c6a74;
   font-size: 0.82rem;
 }
+.verdad__ae {
+  border-color: rgba(157, 78, 221, 0.4);
+  color: #5b1e8f;
+  background: rgba(243, 232, 255, 0.85);
+}
+.verdad__ae:hover:not(:disabled) { background: rgba(231, 210, 255, 0.98); }
+.verdad__ae:disabled { opacity: 0.6; cursor: wait; }
+.verdad__clasificacion {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+.verdad__clasificacion--tautologia {
+  color: #055f4e;
+  background: #c9f7df;
+  border: 1px solid #7bdcb5;
+}
+.verdad__clasificacion--contradiccion {
+  color: #7a1020;
+  background: #ffdfe5;
+  border: 1px solid #f0909f;
+}
+.verdad__clasificacion--contingente {
+  color: #0b5f69;
+  background: #d6f5f1;
+  border: 1px solid #8bd6cd;
+}
 .verdad__tabla-scroll {
   max-height: 28rem;
   overflow: auto;
@@ -2528,6 +2564,7 @@ body.menu-lateral-abierto { overflow: hidden; }
   .verdad__entrada { position: static; }
   .verdad__tabla-scroll { max-height: 22rem; }
   .menu-teoria__cabecera { flex-direction: column; }
+  .menu-teoria__cabecera > div { width: 100%; flex: 0 0 auto; }
   .menu-teoria__cerrar { align-self: flex-end; }
   .menu-teoria__cuerpo { grid-template-columns: 1fr; }
   .memoria__lista {
@@ -2787,6 +2824,8 @@ body.menu-lateral-abierto { overflow: hidden; }
 .simbolos-marquesina {
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
   margin: 1rem 0 0;
   padding: 0.62rem 0;
   border-radius: 12px;

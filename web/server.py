@@ -1073,16 +1073,46 @@ def api_memoria(consulta):
             "aprendizaje": APRENDIZAJE is not None, **datos}
 
 
-def api_tabla_verdad(data):
-    """Calcula la tabla de verdad de una fórmula de enunciados."""
+def api_tabla_verdad(data, proveedor=None):
+    """Calcula la tabla de verdad de una fórmula de enunciados.
+
+    Si el analizador local no puede interpretarla y el cliente lo pide
+    (``usar_ia``), se consulta la ayuda exterior (A.E.) para que proponga una
+    fórmula válida y se intenta de nuevo.
+    """
+    texto = data.get("formula", "")
     try:
-        return {"ok": True, **generar_tabla(data.get("formula", ""))}
+        return {"ok": True, "ia_aplicada": False, **generar_tabla(texto)}
     except ValueError as exc:
-        return {"ok": False, "error": str(exc)}
+        error = str(exc)
     except Exception:
         traceback.print_exc()
-        return {"ok": False,
-                "error": "No se ha podido generar la tabla de verdad."}
+        error = "No se ha podido generar la tabla de verdad."
+
+    respuesta = {"ok": False, "error": error,
+                 "puede_ae": asistente_ia.configurado(proveedor)}
+    if not data.get("usar_ia") or not asistente_ia.configurado(proveedor):
+        return respuesta
+
+    formula = asistente_ia.interpretar_formula(texto, proveedor=proveedor)
+    if not formula:
+        respuesta["error"] = (
+            error + " La ayuda exterior (A.E.) no ha devuelto una fórmula "
+            "válida. Revísala o escríbela con la notación del curso.")
+        return respuesta
+    try:
+        tabla = generar_tabla(formula)
+    except Exception:
+        respuesta["error"] = (
+            error + " La ayuda exterior (A.E.) propuso «%s», pero no es una "
+            "fórmula de enunciados válida." % formula)
+        return respuesta
+    tabla["ia_aplicada"] = True
+    tabla["formula_original"] = str(texto or "").strip()
+    tabla["aviso_ia"] = (
+        "La ayuda exterior (A.E.) ha interpretado la entrada como «%s»."
+        % tabla["formula"])
+    return {"ok": True, **tabla}
 
 
 # ==========================================================================
@@ -1188,7 +1218,7 @@ class Handler(BaseHTTPRequestHandler):
         elif ruta == "/api/deducir":
             self._json(api_deducir(data, proveedor=proveedor))
         elif ruta == "/api/tabla-verdad":
-            self._json(api_tabla_verdad(data))
+            self._json(api_tabla_verdad(data, proveedor=proveedor))
         else:
             self._json({"ok": False, "error": "Ruta desconocida."}, 404)
 

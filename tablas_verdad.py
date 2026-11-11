@@ -27,6 +27,10 @@ _SUSTITUCIONES = (
     ("⊃", "→"),
     ("⊂", "→"),
     ("≡", "↔"),
+    # El guion se admite como negador.  Debe ir después de «->» para no
+    # romper la flecha escrita en ASCII.
+    ("-", "¬"),
+    ("−", "¬"),
 )
 
 

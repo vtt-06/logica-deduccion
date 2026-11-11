@@ -800,7 +800,7 @@
 
             <article class="definicion">
               <h4 class="definicion__titulo">
-                <span class="definicion__numero">2.2.4</span> Deducción en L
+                <span class="definicion__numero">2.2.1</span> Deducción en L
               </h4>
               <div class="definicion__texto">
                 <p>Sea <code>Γ</code> un conjunto de fbf’s de <code>L</code>.</p>
@@ -822,7 +822,7 @@
 
             <article class="definicion">
               <h4 class="definicion__titulo">
-                <span class="definicion__numero">2.2.4</span> Demostración en L
+                <span class="definicion__numero">2.2.3</span> Demostración en L
               </h4>
               <div class="definicion__texto">
                 <p>Una demostración en <code>L</code> es una deducción en
@@ -2250,6 +2250,8 @@ meta: (Λx)(H(x)→¬A(x))</pre>
                       data-formula="(p∨q)→r">(p∨q)→r</button>
               <button type="button" class="verdad__chip"
                       data-formula="p↔q">p↔q</button>
+              <button type="button" class="verdad__chip"
+                      data-formula="-p -> q">-p -&gt; q</button>
             </div>
 
             <div class="verdad__acciones">
@@ -2262,6 +2264,10 @@ meta: (Λx)(H(x)→¬A(x))</pre>
                       class="verdad__secundario">
                 Usar la conclusión actual
               </button>
+              <button type="button" id="btn-verdad-ae"
+                      class="verdad__secundario verdad__ae" hidden>
+                Ayuda externa (A.E.)
+              </button>
             </div>
             <p id="verdad-aviso" class="verdad__aviso" role="alert" hidden></p>
           </form>
@@ -2271,8 +2277,10 @@ meta: (Λx)(H(x)→¬A(x))</pre>
             <p>
               Notación del curso: <code>¬</code>, <code>∧</code>,
               <code>∨</code>, <code>→</code> y <code>↔</code>. También puedes
-              escribir <code>!</code>, <code>&amp;</code>, <code>|</code>,
-              <code>-&gt;</code> y <code>&lt;-&gt;</code>.
+              escribir <code>!</code> o <code>~</code> para la negación,
+              <code>-</code> como negador (por ejemplo <code>-p</code>),
+              <code>&amp;</code>, <code>|</code>, <code>-&gt;</code> para la
+              flecha y <code>&lt;-&gt;</code> para el bicondicional.
             </p>
           </details>
         </section>
@@ -2387,7 +2395,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
 
   <footer class="pie">
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">FraLog · v2.2.4</span>
+      <span id="version-texto" class="version-texto">FraLog · v2.2.5</span>
     </div>
   </footer>
 

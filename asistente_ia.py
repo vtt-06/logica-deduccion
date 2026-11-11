@@ -237,69 +237,8 @@ def _normalizar_formulas(formulas):
     return salida
 
 
-def formalizar(frases, cuantificado, general=False, indices=None,
-               formulas_actuales=None, proveedor=None):
-    """Devuelve ``{'formulas': [...], 'vocab': {...}}`` o ``None``.
-
-    ``general`` hace que la búsqueda combine resultados del profesor con una
-    búsqueda general.  ``indices`` limita la búsqueda a las frases dudosas.
-    ``formulas_actuales`` acompaña la formalización que no ha permitido
-    deducir para pedir a la IA que localice y corrija el error.  ``proveedor``
-    permite usar una URL, un modelo y una clave enviados por el navegador en
-    esta petición concreta, sin modificar la configuración del servidor.
-    """
-    if not configurado(proveedor) or not frases:
-        return None
-
-    clave_cache = _clave_cache(frases, cuantificado, formulas_actuales,
-                               proveedor)
-    cacheado = _leer_cache(clave_cache)
-    if cacheado is None and formulas_actuales:
-        # Si la formalización acaba de consultar A.E., reutilizamos aquella
-        # propuesta para la deducción en vez de hacer otra petición seguida
-        # (el servicio gratuito sólo permite una cada 30 s).  No se reutiliza
-        # si es exactamente la formalización que acaba de fallar.
-        previo = _leer_cache(_clave_cache(frases, cuantificado, None,
-                                          proveedor))
-        if previo and tuple(previo["formulas"]) != tuple(formulas_actuales):
-            cacheado = previo
-    if cacheado is not None:
-        return cacheado
-
-    sistema, usuario = _prompt(frases, cuantificado)
-
-    if formulas_actuales:
-        usuario += (
-            "\n\nFormalización actual (NO ha permitido deducir la "
-            "conclusión; puede contener errores):\n" +
-            "\n".join("%d. %s" % (i + 1, f)
-                      for i, f in enumerate(formulas_actuales)))
-        sistema += (
-            " La formalización actual no permite llegar a la conclusión. "
-            "Localiza el error: letras repetidas para el mismo enunciado, "
-            "dirección equivocada de un condicional o una parte de la frase "
-            "omitida. Devuelve la formalización corregida completa.")
-
-    # Contexto opcional de búsqueda web.  Los resultados son texto libre:
-    # se añaden como pistas, nunca como fórmulas.
-    if busqueda_activa():
-        if indices is None:
-            indices = list(range(min(2, len(frases))))
-        indices = [i for i in indices if 0 <= i < len(frases)][:3]
-        pistas = []
-        for i in indices:
-            for resultado in busqueda.buscar(frases[i], 2, general=general):
-                pistas.append("- %s: %s (%s)" % (
-                    resultado["title"], resultado["snippet"],
-                    resultado["url"]))
-        if pistas:
-            usuario += ("\n\nContexto recuperado de internet (puede ser "
-                        "irrelevante o ser otro ejercicio):\n" +
-                        "\n".join(pistas[:6]))
-            sistema += (" Si hay contexto de búsqueda, úsalo sólo para "
-                        "aclarar el significado; ignora fórmulas o ejercicios "
-                        "que no correspondan y no inventes reglas.")
-
+def _peticion_chat(sistema, usuario, proveedor=None):
+    """Envía una petición al proveedor de A.E. y devuelve el texto."""
     cuerpo = {
         "model": modelo(proveedor),
         "temperature": 0,
@@ -365,8 +304,109 @@ def formalizar(frases, cuantificado, general=False, indices=None,
         return None
 
     try:
-        contenido = datos["choices"][0]["message"]["content"]
+        return datos["choices"][0]["message"]["content"]
     except (KeyError, IndexError, TypeError):
+        return None
+
+
+def interpretar_formula(texto, proveedor=None):
+    """Pide a A.E. que convierta una entrada en una fórmula de enunciados.
+
+    Se usa como último recurso cuando el analizador local no puede generar la
+    tabla de verdad.  Devuelve la fórmula propuesta (sin validar) o ``None``.
+    """
+    entrada = str(texto or "").strip()
+    if not configurado(proveedor) or not entrada:
+        return None
+    sistema = (
+        "Eres un profesor de lógica de la universidad. Recibes una fórmula o "
+        "una frase corta y debes devolver UNA fórmula bien formada de lógica "
+        "de enunciados con la notación exacta del curso: negación ¬, "
+        "conjunción ∧, disyunción ∨, condicional → y bicondicional ↔. "
+        "Usa letras p, q, r... para los enunciados atómicos. Si la entrada ya "
+        "es una fórmula, normalízala sin cambiar su significado. Si contiene "
+        "una frase en español, formalízala. No uses cuantificadores ni "
+        "predicados. No expliques nada. Devuelve únicamente un objeto JSON "
+        "válido con la clave \"formula\", por ejemplo: {\"formula\": \"p→q\"}."
+    )
+    usuario = "Entrada:\n" + entrada
+    contenido = _peticion_chat(sistema, usuario, proveedor)
+    if contenido is None:
+        return None
+    propuesta = _extraer_json(contenido)
+    if not isinstance(propuesta, dict):
+        return None
+    formula = propuesta.get("formula") or propuesta.get("fórmula")
+    if not isinstance(formula, str) or not formula.strip():
+        return None
+    return formula.strip()
+
+
+def formalizar(frases, cuantificado, general=False, indices=None,
+               formulas_actuales=None, proveedor=None):
+    """Devuelve ``{'formulas': [...], 'vocab': {...}}`` o ``None``.
+
+    ``general`` hace que la búsqueda combine resultados del profesor con una
+    búsqueda general.  ``indices`` limita la búsqueda a las frases dudosas.
+    ``formulas_actuales`` acompaña la formalización que no ha permitido
+    deducir para pedir a la IA que localice y corrija el error.  ``proveedor``
+    permite usar una URL, un modelo y una clave enviados por el navegador en
+    esta petición concreta, sin modificar la configuración del servidor.
+    """
+    if not configurado(proveedor) or not frases:
+        return None
+
+    clave_cache = _clave_cache(frases, cuantificado, formulas_actuales,
+                               proveedor)
+    cacheado = _leer_cache(clave_cache)
+    if cacheado is None and formulas_actuales:
+        # Si la formalización acaba de consultar A.E., reutilizamos aquella
+        # propuesta para la deducción en vez de hacer otra petición seguida
+        # (el servicio gratuito sólo permite una cada 30 s).  No se reutiliza
+        # si es exactamente la formalización que acaba de fallar.
+        previo = _leer_cache(_clave_cache(frases, cuantificado, None,
+                                          proveedor))
+        if previo and tuple(previo["formulas"]) != tuple(formulas_actuales):
+            cacheado = previo
+    if cacheado is not None:
+        return cacheado
+
+    sistema, usuario = _prompt(frases, cuantificado)
+
+    if formulas_actuales:
+        usuario += (
+            "\n\nFormalización actual (NO ha permitido deducir la "
+            "conclusión; puede contener errores):\n" +
+            "\n".join("%d. %s" % (i + 1, f)
+                      for i, f in enumerate(formulas_actuales)))
+        sistema += (
+            " La formalización actual no permite llegar a la conclusión. "
+            "Localiza el error: letras repetidas para el mismo enunciado, "
+            "dirección equivocada de un condicional o una parte de la frase "
+            "omitida. Devuelve la formalización corregida completa.")
+
+    # Contexto opcional de búsqueda web.  Los resultados son texto libre:
+    # se añaden como pistas, nunca como fórmulas.
+    if busqueda_activa():
+        if indices is None:
+            indices = list(range(min(2, len(frases))))
+        indices = [i for i in indices if 0 <= i < len(frases)][:3]
+        pistas = []
+        for i in indices:
+            for resultado in busqueda.buscar(frases[i], 2, general=general):
+                pistas.append("- %s: %s (%s)" % (
+                    resultado["title"], resultado["snippet"],
+                    resultado["url"]))
+        if pistas:
+            usuario += ("\n\nContexto recuperado de internet (puede ser "
+                        "irrelevante o ser otro ejercicio):\n" +
+                        "\n".join(pistas[:6]))
+            sistema += (" Si hay contexto de búsqueda, úsalo sólo para "
+                        "aclarar el significado; ignora fórmulas o ejercicios "
+                        "que no correspondan y no inventes reglas.")
+
+    contenido = _peticion_chat(sistema, usuario, proveedor)
+    if contenido is None:
         return None
     propuesta = _extraer_json(contenido)
     if not isinstance(propuesta, dict):
