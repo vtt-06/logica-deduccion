@@ -2,13 +2,14 @@
    Estrategia: red primero para no servir versiones antiguas; si no hay
    conexión, se usa la copia guardada.  Las llamadas a /api/ nunca se
    cachean. */
-const CACHE = "logica-2.2.5";
+const CACHE = "logica-2.2.6";
 const RECURSOS = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
-  "/favicon.svg",
+  "/favicon.png",
+  "/logo-fralog.png",
   "/manifest.json",
   "/icono-192.png",
   "/icono-512.png",

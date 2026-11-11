@@ -126,20 +126,15 @@ code {
   gap: 0.9rem;
 }
 
-.marca__simbolo {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
-  flex: 0 0 58px;
-  border-radius: 18px;
-  font-family: var(--mono);
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  backdrop-filter: blur(4px);
+.marca__bloque {
+  min-width: 0;
+}
+
+.marca__logo {
+  display: block;
+  width: clamp(230px, 42vw, 400px);
+  height: auto;
+  filter: drop-shadow(0 10px 22px rgba(28, 4, 52, 0.45));
 }
 
 .marca__etiqueta {
@@ -1397,7 +1392,7 @@ code {
    ========================================================================== */
 @media (max-width: 620px) {
   .cabecera { border-radius: 0 0 28px 28px; }
-  .marca__simbolo { width: 48px; height: 48px; flex-basis: 48px; font-size: 0.8rem; }
+  .marca__logo { width: min(78vw, 320px); }
   .contenido { padding-left: 0.75rem; padding-right: 0.75rem; }
   .tarjeta { border-radius: 18px; padding: 1rem 0.9rem; }
   .boton { width: 100%; justify-content: center; }
