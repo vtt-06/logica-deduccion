@@ -69,19 +69,8 @@ def evaluar(nodo, asignacion):
                      "las tablas de verdad son para enunciados.")
 
 
-def generar_tabla(texto):
-    """Devuelve la tabla de verdad de una fórmula.
-
-    El resultado tiene esta forma::
-
-        {
-          "formula": "p→q",
-          "variables": ["p", "q"],
-          "filas": [{"valores": [true, true], "resultado": true}, ...],
-          "clasificacion": "contingente",
-          "resumen": "La fórmula es contingente: ..."
-        }
-    """
+def _leer_formula(texto):
+    """Interpreta una fórmula de enunciados o lanza ``ValueError``."""
     if not str(texto or "").strip():
         raise ValueError("Escribe una fórmula para generar su tabla de verdad.")
     try:
@@ -99,6 +88,55 @@ def generar_tabla(texto):
     if len(variables) > MAX_VARIABLES:
         raise ValueError("La fórmula tiene demasiadas variables (%d). El "
                          "máximo es %d." % (len(variables), MAX_VARIABLES))
+    return formula, variables
+
+
+def _clasificar(resultados):
+    if all(resultados):
+        return ("tautologia",
+                "Es una tautología: siempre es verdadera.")
+    if not any(resultados):
+        return ("contradiccion",
+                "Es una contradicción: siempre es falsa.")
+    return ("contingente",
+            "Es contingente: es verdadera en algunas filas y falsa en otras.")
+
+
+def _subformulas(formula):
+    """Subfórmulas compuestas, en orden de evaluación (sin la fórmula raíz)."""
+    salida, vistas = [], set()
+
+    def recorrer(nodo, raiz=False):
+        for hijo in nodo.children:
+            recorrer(hijo)
+        if raiz or nodo.kind == "var" or nodo.kind == "pred":
+            return
+        clave = nodo.key()
+        if clave in vistas:
+            return
+        vistas.add(clave)
+        salida.append(nodo)
+
+    recorrer(formula, raiz=True)
+    return salida
+
+
+def generar_tabla(texto):
+    """Devuelve la tabla de verdad de una fórmula.
+
+    El resultado tiene esta forma::
+
+        {
+          "formula": "p→q",
+          "variables": ["p", "q"],
+          "filas": [{"valores": [true, true], "resultado": true}, ...],
+          "subformulas": [{"formula": "p→q", "valores": [...]}, ...],
+          "clasificacion": "contingente",
+          "resumen": "La fórmula es contingente: ..."
+        }
+    """
+    formula, variables = _leer_formula(texto)
+    compuestas = _subformulas(formula)
 
     filas = []
     for combinacion in itertools.product((True, False), repeat=len(variables)):
@@ -106,23 +144,56 @@ def generar_tabla(texto):
         filas.append({
             "valores": list(combinacion),
             "resultado": evaluar(formula, asignacion),
+            "parciales": [evaluar(nodo, asignacion) for nodo in compuestas],
         })
 
-    resultados = [fila["resultado"] for fila in filas]
-    if all(resultados):
-        clasificacion = "tautologia"
-        resumen = "Es una tautología: siempre es verdadera."
-    elif not any(resultados):
-        clasificacion = "contradiccion"
-        resumen = "Es una contradicción: siempre es falsa."
-    else:
-        clasificacion = "contingente"
-        resumen = ("Es contingente: es verdadera en algunas filas y falsa "
-                   "en otras.")
+    clasificacion, resumen = _clasificar(
+        [fila["resultado"] for fila in filas])
     return {
         "formula": render(formula),
         "variables": variables,
         "filas": filas,
+        "subformulas": [
+            {"formula": render(nodo),
+             "valores": [fila["parciales"][i] for fila in filas]}
+            for i, nodo in enumerate(compuestas)
+        ],
         "clasificacion": clasificacion,
         "resumen": resumen,
+    }
+
+
+def comparar_formulas(texto_a, texto_b):
+    """Compara dos fórmulas y determina si son semánticamente equivalentes."""
+    formula_a, variables_a = _leer_formula(texto_a)
+    formula_b, variables_b = _leer_formula(texto_b)
+    variables = sorted(set(variables_a) | set(variables_b))
+    if len(variables) > MAX_VARIABLES:
+        raise ValueError("Entre las dos fórmulas hay demasiadas variables "
+                         "(%d). El máximo es %d." %
+                         (len(variables), MAX_VARIABLES))
+
+    filas = []
+    for combinacion in itertools.product((True, False), repeat=len(variables)):
+        asignacion = dict(zip(variables, combinacion))
+        filas.append({
+            "valores": list(combinacion),
+            "resultado": evaluar(formula_a, asignacion),
+            "resultado_b": evaluar(formula_b, asignacion),
+        })
+    equivalente = all(f["resultado"] == f["resultado_b"] for f in filas)
+    clasificacion, resumen = _clasificar(
+        [fila["resultado"] for fila in filas])
+    clasificacion_b, resumen_b = _clasificar(
+        [fila["resultado_b"] for fila in filas])
+    return {
+        "formula": render(formula_a),
+        "formula_b": render(formula_b),
+        "variables": variables,
+        "filas": filas,
+        "equivalente": equivalente,
+        "clasificacion": clasificacion,
+        "clasificacion_b": clasificacion_b,
+        "resumen": resumen,
+        "resumen_b": resumen_b,
     }

@@ -109,6 +109,60 @@
   }
 
   const CLAVE_IA_LOCAL = "logica.proveedorIA";
+  const CLAVE_CACHE = "logica.cache.";
+  let ultimoAvisoServidor = "";
+  let conexionActiva = navigator.onLine !== false;
+
+  function hashTexto(texto) {
+    let hash = 5381;
+    for (let i = 0; i < texto.length; i += 1) {
+      hash = ((hash << 5) + hash + texto.charCodeAt(i)) | 0;
+    }
+    return (hash >>> 0).toString(36);
+  }
+
+  function estadoServidor(tipo, texto) {
+    const caja = $("#estado-servidor");
+    const salida = $("#estado-servidor-texto");
+    if (!caja || !salida) return;
+    if (!texto) {
+      caja.hidden = true;
+      caja.className = "estado-servidor";
+      return;
+    }
+    caja.hidden = false;
+    caja.className = "estado-servidor estado-servidor--" + (tipo || "aviso");
+    salida.textContent = texto;
+    ultimoAvisoServidor = texto;
+  }
+
+  async function comprobarSalud() {
+    try {
+      const respuesta = await fetch("/api/salud", { cache: "no-store" });
+      if (!respuesta.ok) throw new Error("salud");
+      const datos = await respuesta.json();
+      if (!datos.ok) throw new Error("salud");
+      conexionActiva = true;
+      if (datos.ia === false) {
+        estadoServidor("aviso",
+          "El servidor funciona, pero la ayuda exterior (A.E.) no está " +
+          "configurada en este despliegue.");
+      } else if (ultimoAvisoServidor) {
+        estadoServidor("", "");
+      }
+      return datos;
+    } catch (error) {
+      conexionActiva = false;
+      estadoServidor("error",
+        navigator.onLine === false
+          ? "Sin conexión. Puedes seguir consultando los últimos resultados " +
+            "guardados de este ejercicio."
+          : "No se puede contactar con el servidor. Revisa tu conexión o " +
+            "inténtalo de nuevo en unos segundos.");
+      return null;
+    }
+  }
+
 
   function leerProveedorIA() {
     try {
@@ -136,19 +190,43 @@
   }
 
   async function pedir(url, datos) {
-    const respuesta = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", ...cabecerasIA() },
-      body: JSON.stringify(datos),
-    });
-    let cuerpo;
+    const cuerpoPeticion = JSON.stringify(datos);
+    const clave = CLAVE_CACHE + url + "." + hashTexto(cuerpoPeticion);
     try {
-      cuerpo = await respuesta.json();
-    } catch (e) {
-      throw new Error("El servidor no ha respondido correctamente.");
+      const respuesta = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...cabecerasIA() },
+        body: cuerpoPeticion,
+      });
+      let cuerpo;
+      try {
+        cuerpo = await respuesta.json();
+      } catch (e) {
+        throw new Error("El servidor no ha respondido correctamente.");
+      }
+      if (!respuesta.ok && cuerpo.error) throw new Error(cuerpo.error);
+      try {
+        if (cuerpo && cuerpo.ok) {
+          localStorage.setItem(clave, JSON.stringify(cuerpo));
+        }
+      } catch (e) { /* sin espacio o modo privado */ }
+      return cuerpo;
+    } catch (error) {
+      try {
+        const guardado = localStorage.getItem(clave);
+        if (guardado) {
+          estadoServidor("aviso",
+            "Sin conexión con el servidor: se muestra el último resultado " +
+            "guardado para este mismo ejercicio.");
+          return { ...JSON.parse(guardado), offline: true };
+        }
+      } catch (e) { /* nada guardado */ }
+      estadoServidor("error",
+        navigator.onLine === false
+          ? "Sin conexión. Este ejercicio no está guardado todavía."
+          : "No se puede contactar con el servidor. Inténtalo de nuevo.");
+      throw error;
     }
-    if (!respuesta.ok && cuerpo.error) throw new Error(cuerpo.error);
-    return cuerpo;
   }
 
   function cargando(boton, activo) {
@@ -1040,15 +1118,155 @@
   });
 
   $("#btn-descargar").addEventListener("click", () => {
-    const blob = new Blob([estado.plain || ""], { type: "text/plain;charset=utf-8" });
+    descargarArchivo("deduccion.txt", estado.plain || "",
+      "text/plain;charset=utf-8");
+  });
+
+  function descargarArchivo(nombre, texto, tipo) {
+    const blob = new Blob([texto], { type: tipo || "text/plain;charset=utf-8" });
     const enlace = document.createElement("a");
     enlace.href = URL.createObjectURL(blob);
-    enlace.download = "deduccion.txt";
+    enlace.download = nombre;
     document.body.append(enlace);
     enlace.click();
     enlace.remove();
-    URL.revokeObjectURL(enlace.href);
-  });
+    setTimeout(() => URL.revokeObjectURL(enlace.href), 1000);
+  }
+
+  function textoFormalizacion() {
+    const items = estado.items || [];
+    return items.map((item, indice) => {
+      const marca = indice === items.length - 1 ? "⊢ " : "− ";
+      return marca + (item.formula || "");
+    }).join("\n");
+  }
+
+  function textoMarkdown() {
+    const items = estado.items || [];
+    const lineas = ["# Deducción FraLog", "", "## Formalización", "", "```"];
+    items.forEach((item, indice) => {
+      lineas.push((indice === items.length - 1 ? "⊢ " : "− ") +
+        (item.formula || ""));
+      if (item.text) lineas.push("  # " + item.text);
+    });
+    lineas.push("```", "", "## Deducción", "", "```", estado.plain || "", "```");
+    return lineas.join("\n") + "\n";
+  }
+
+  function textoCSV() {
+    const filas = [["n", "profundidad", "formula", "regla", "justificacion"]];
+    (estado.lineas || []).forEach((ln) => {
+      filas.push([ln.n, ln.depth, ln.formula, ln.label || ln.rawRule,
+        ln.citation || ""]);
+    });
+    return filas.map((fila) => fila.map((celda) => {
+      const texto = String(celda == null ? "" : celda).replace(/"/g, '""');
+      return '"' + texto + '"';
+    }).join(",")).join("\r\n") + "\r\n";
+  }
+
+  const btnCopiarFormalizacion = $("#btn-copiar-formalizacion");
+  if (btnCopiarFormalizacion) {
+    btnCopiarFormalizacion.addEventListener("click", async () => {
+      const ok = await copiarTexto(textoFormalizacion());
+      aviso(avisoCopiar, ok ? "Formalización copiada." :
+        "No se ha podido copiar.", "ok");
+    });
+  }
+
+  const btnDescargarMd = $("#btn-descargar-md");
+  if (btnDescargarMd) {
+    btnDescargarMd.addEventListener("click", () => {
+      descargarArchivo("deduccion.md", textoMarkdown(),
+        "text/markdown;charset=utf-8");
+    });
+  }
+
+  const btnDescargarCsv = $("#btn-descargar-csv");
+  if (btnDescargarCsv) {
+    btnDescargarCsv.addEventListener("click", () => {
+      descargarArchivo("deduccion.csv", textoCSV(),
+        "text/csv;charset=utf-8");
+    });
+  }
+
+  const btnImprimir = $("#btn-imprimir");
+  if (btnImprimir) {
+    btnImprimir.addEventListener("click", () => {
+      document.body.classList.add("imprimir-deduccion");
+      window.print();
+      setTimeout(() => document.body.classList.remove("imprimir-deduccion"),
+        500);
+    });
+  }
+
+  function base64UTF8(texto) {
+    const bytes = new TextEncoder().encode(texto);
+    let binario = "";
+    bytes.forEach((b) => { binario += String.fromCharCode(b); });
+    return btoa(binario);
+  }
+
+  function desdeBase64UTF8(codigo) {
+    const binario = atob(codigo);
+    const bytes = new Uint8Array(binario.length);
+    for (let i = 0; i < binario.length; i += 1) {
+      bytes[i] = binario.charCodeAt(i);
+    }
+    return new TextDecoder().decode(bytes);
+  }
+
+  function empaquetarEjercicio() {
+    return {
+      v: 1,
+      calculo: estado.calculo,
+      frases: area.value,
+      items: (estado.items || []).map((item) => ({
+        text: item.text, formula: item.formula, role: item.role,
+        source: item.source, ok: item.ok,
+      })),
+      vocab: recogerVocabulario(),
+      lines: estado.lineas || [],
+      plain: estado.plain || "",
+    };
+  }
+
+  async function compartirEjercicio() {
+    if (!estado.items || !estado.items.length) {
+      aviso(avisoCopiar, "Primero formaliza un ejercicio.", "");
+      return;
+    }
+    const paquete = empaquetarEjercicio();
+    const codigo = base64UTF8(JSON.stringify(paquete));
+    const url = window.location.origin + window.location.pathname +
+      "?e=" + encodeURIComponent(codigo);
+    try {
+      history.replaceState(null, "", "?e=" + encodeURIComponent(codigo));
+    } catch (error) { /* algunos navegadores lo bloquean */ }
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Ejercicio de FraLog",
+          text: "Ejercicio de lógica en FraLog",
+          url,
+        });
+        aviso(avisoCopiar, "Enlace preparado para compartir.", "ok");
+        return;
+      } catch (error) {
+        if (error && error.name === "AbortError") return;
+      }
+    }
+    const ok = await copiarTexto(url);
+    aviso(avisoCopiar, ok
+      ? "Enlace copiado al portapapeles."
+      : "Copia este enlace: " + url, "ok");
+  }
+
+  const btnCompartir = $("#btn-compartir");
+  if (btnCompartir) {
+    btnCompartir.addEventListener("click", compartirEjercicio);
+  }
+
 
   /* ------------------------------------------------------------------ */
   /* Memoria local de frases                                            */
@@ -1063,9 +1281,10 @@
         headers: cabecerasIA(),
       });
       const datos = await respuesta.json();
+      const iaDisponible = Boolean(datos.ia) && conexionActiva;
       const botonIA = $("#btn-consultar-ia");
-      if (botonIA) botonIA.hidden = !datos.ia;
-      if (!datos.ia) {
+      if (botonIA) botonIA.hidden = !iaDisponible;
+      if (!iaDisponible) {
         const botonAE = $("#btn-ayuda-deduccion");
         if (botonAE) botonAE.hidden = true;
       }
@@ -1098,7 +1317,11 @@
       }
       const estadoIA = $("#estado-ia");
       if (estadoIA) {
-        if (datos.ia) {
+        if (!conexionActiva) {
+          estadoIA.textContent =
+            "Sin conexión: la ayuda exterior (A.E.) sólo está disponible " +
+            "cuando vuelve internet.";
+        } else if (datos.ia) {
           estadoIA.textContent = "Ayuda exterior (A.E.) conectada" +
             (datos.modelo ? " (" + datos.modelo + ")" : "") +
             (datos.gratuita ? ", servicio gratuito" : "") +
@@ -1910,17 +2133,66 @@
     btnRecargarMemoria.addEventListener("click", () => cargarMemoria(true));
   }
 
+  const btnExportarMemoria = $("#btn-exportar-memoria");
+  if (btnExportarMemoria) {
+    btnExportarMemoria.addEventListener("click", () => {
+      const enlace = document.createElement("a");
+      enlace.href = "/api/memoria/exportar";
+      enlace.download = "fralog-memoria.json";
+      document.body.append(enlace);
+      enlace.click();
+      enlace.remove();
+    });
+  }
+
+  const btnImportarMemoria = $("#btn-importar-memoria");
+  const inputImportarMemoria = $("#input-importar-memoria");
+  if (btnImportarMemoria && inputImportarMemoria) {
+    btnImportarMemoria.addEventListener("click", () => {
+      inputImportarMemoria.value = "";
+      inputImportarMemoria.click();
+    });
+    inputImportarMemoria.addEventListener("change", async () => {
+      const archivo = inputImportarMemoria.files &&
+        inputImportarMemoria.files[0];
+      if (!archivo) return;
+      let paquete;
+      try {
+        paquete = JSON.parse(await archivo.text());
+      } catch (error) {
+        window.alert("El archivo no es un JSON válido.");
+        return;
+      }
+      const confirmado = window.confirm(
+        "Se sustituirá la memoria actual por la del archivo. " +
+        "¿Quieres continuar?");
+      if (!confirmado) return;
+      try {
+        const datos = await pedir("/api/memoria/importar", { paquete });
+        if (!datos.ok) throw new Error(datos.error || "No se pudo importar.");
+        memoriaEstado.cargado = false;
+        await cargarMemoria(true);
+        window.alert("Memoria importada: " + datos.exactas + " frases, " +
+          datos.ejercicios + " ejercicios y " + datos.banco + " del banco.");
+      } catch (error) {
+        window.alert(error.message || "No se ha podido importar la memoria.");
+      }
+    });
+  }
+
   /* ------------------------------------------------------------------ */
   /* Tablas de verdad                                                   */
   /* ------------------------------------------------------------------ */
   const btnVerdad = $("#btn-verdad");
   const formVerdad = $("#verdad-form");
   const campoVerdad = $("#verdad-formula");
+  const campoVerdadB = $("#verdad-formula-b");
   const avisoVerdad = $("#verdad-aviso");
   const resultadoVerdad = $("#verdad-resultado");
   const btnCalcularVerdad = $("#btn-calcular-verdad");
   const btnVerdadAE = $("#btn-verdad-ae");
   let menuVerdadControl = null;
+  let ultimaTablaVerdad = null;
 
   function avisoVerdadTexto(texto) {
     if (!avisoVerdad) return;
@@ -1964,34 +2236,60 @@
   }
 
   function renderTablaVerdad(datos) {
+    ultimaTablaVerdad = datos;
     resultadoVerdad.textContent = "";
+    const comparacion = datos.equivalente !== undefined;
     const resumen = crear("div", "verdad__resumen");
     resumen.append(crear("code", "verdad__formula", datos.formula));
-    const etiquetas = {
-      tautologia: "Tautología",
-      contradiccion: "Contradicción",
-      contingente: "Contingente",
-    };
-    resumen.append(crear("span", "verdad__badge verdad__badge--" +
-      datos.clasificacion, etiquetas[datos.clasificacion] ||
-      datos.clasificacion));
-    resultadoVerdad.append(resumen);
+    if (comparacion) {
+      resumen.append(crear("span", "verdad__comparacion-signo", "vs"),
+        crear("code", "verdad__formula", datos.formula_b));
+      const caja = crear("p", "verdad__comparacion " +
+        (datos.equivalente ? "verdad__comparacion--si" :
+          "verdad__comparacion--no"),
+        datos.equivalente
+          ? "Las dos fórmulas son semánticamente equivalentes."
+          : "Las dos fórmulas NO son equivalentes.");
+      resultadoVerdad.append(resumen, caja);
+    } else {
+      const etiquetas = {
+        tautologia: "Tautología",
+        contradiccion: "Contradicción",
+        contingente: "Contingente",
+      };
+      resumen.append(crear("span", "verdad__badge verdad__badge--" +
+        datos.clasificacion, etiquetas[datos.clasificacion] ||
+        datos.clasificacion));
+      resultadoVerdad.append(resumen);
 
-    const nombreClase = etiquetas[datos.clasificacion] || datos.clasificacion;
-    resultadoVerdad.append(crear("p", "verdad__clasificacion " +
-      "verdad__clasificacion--" + datos.clasificacion,
-      "Clasificación: " + nombreClase));
+      const nombreClase = etiquetas[datos.clasificacion] ||
+        datos.clasificacion;
+      resultadoVerdad.append(crear("p", "verdad__clasificacion " +
+        "verdad__clasificacion--" + datos.clasificacion,
+        "Clasificación: " + nombreClase));
+    }
 
     const variables = datos.variables || [];
     const filas = datos.filas || [];
-    resultadoVerdad.append(crear("p", "verdad__detalle",
-      datos.resumen + " " + variables.length +
-      (variables.length === 1 ? " variable" : " variables") + " · " +
-      filas.length + (filas.length === 1 ? " fila" : " filas") + "."));
+    const subformulas = datos.subformulas || [];
+    if (!comparacion) {
+      resultadoVerdad.append(crear("p", "verdad__detalle",
+        datos.resumen + " " + variables.length +
+        (variables.length === 1 ? " variable" : " variables") + " · " +
+        filas.length + (filas.length === 1 ? " fila" : " filas") + "."));
+    } else {
+      resultadoVerdad.append(crear("p", "verdad__detalle",
+        variables.length + (variables.length === 1 ? " variable" :
+          " variables") + " · " + filas.length +
+        (filas.length === 1 ? " fila" : " filas") + "."));
+    }
 
     const scroll = crear("div", "verdad__tabla-scroll");
-    const tabla = crear("table", "verdad__tabla");
-    tabla.setAttribute("aria-label", "Tabla de verdad de " + datos.formula);
+    const tabla = crear("table", "verdad__tabla" +
+      (comparacion ? " verdad__tabla--comparar" : ""));
+    tabla.setAttribute("aria-label", comparacion
+      ? "Comparación de " + datos.formula + " y " + datos.formula_b
+      : "Tabla de verdad de " + datos.formula);
     const cabecera = document.createElement("thead");
     const filaCabecera = document.createElement("tr");
     variables.forEach((variable) => {
@@ -1999,17 +2297,36 @@
       th.scope = "col";
       filaCabecera.append(th);
     });
-    const thResultado = crear("th", null, datos.formula);
-    thResultado.scope = "col";
-    filaCabecera.append(thResultado);
+    if (comparacion) {
+      const thA = crear("th", null, datos.formula);
+      thA.scope = "col";
+      const thB = crear("th", null, datos.formula_b);
+      thB.scope = "col";
+      filaCabecera.append(thA, thB);
+    } else {
+      subformulas.forEach((sub) => {
+        const th = crear("th", "verdad__sub", sub.formula);
+        th.scope = "col";
+        filaCabecera.append(th);
+      });
+      const thResultado = crear("th", null, datos.formula);
+      thResultado.scope = "col";
+      filaCabecera.append(thResultado);
+    }
     cabecera.append(filaCabecera);
     tabla.append(cabecera);
 
     const cuerpo = document.createElement("tbody");
-    filas.forEach((fila) => {
+    filas.forEach((fila, indice) => {
       const tr = document.createElement("tr");
       (fila.valores || []).forEach((valor) => tr.append(celdaValor(valor)));
-      tr.append(celdaValor(fila.resultado));
+      if (comparacion) {
+        tr.append(celdaValor(fila.resultado),
+          celdaValor(fila.resultado_b));
+      } else {
+        (fila.parciales || []).forEach((valor) => tr.append(celdaValor(valor)));
+        tr.append(celdaValor(fila.resultado));
+      }
       cuerpo.append(tr);
     });
     tabla.append(cuerpo);
@@ -2017,12 +2334,52 @@
     resultadoVerdad.append(scroll);
   }
 
-  async function calcularTablaVerdad(evento, usarIA = false) {
+  function exportarTablaCSV() {
+    const datos = ultimaTablaVerdad;
+    if (!datos || !datos.filas) {
+      avisoVerdadTexto("Genera una tabla antes de exportarla.");
+      return;
+    }
+    const comparacion = datos.equivalente !== undefined;
+    const cabecera = [...(datos.variables || [])];
+    if (comparacion) {
+      cabecera.push(datos.formula, datos.formula_b);
+    } else {
+      (datos.subformulas || []).forEach((sub) => cabecera.push(sub.formula));
+      cabecera.push(datos.formula);
+    }
+    const filas = [cabecera];
+    (datos.filas || []).forEach((fila) => {
+      const valores = (fila.valores || []).map((v) => v ? "V" : "F");
+      if (comparacion) {
+        valores.push(fila.resultado ? "V" : "F",
+          fila.resultado_b ? "V" : "F");
+      } else {
+        (fila.parciales || []).forEach((v) => valores.push(v ? "V" : "F"));
+        valores.push(fila.resultado ? "V" : "F");
+      }
+      filas.push(valores);
+    });
+    const csv = filas.map((fila) => fila.map((celda) =>
+      '"' + String(celda).replace(/"/g, '""') + '"').join(","))
+      .join("\r\n") + "\r\n";
+    descargarArchivo(comparacion ? "comparacion.csv" : "tabla-verdad.csv",
+      csv, "text/csv;charset=utf-8");
+  }
+
+  async function calcularTablaVerdad(evento, usarIA = false, comparar = false) {
     if (evento) evento.preventDefault();
     const formula = campoVerdad.value.trim();
     if (!formula) {
       avisoVerdadTexto("Escribe una fórmula para generar su tabla de verdad.");
       campoVerdad.focus();
+      return;
+    }
+    const formulaB = comparar && campoVerdadB
+      ? campoVerdadB.value.trim() : "";
+    if (comparar && !formulaB) {
+      avisoVerdadTexto("Escribe la segunda fórmula para compararlas.");
+      if (campoVerdadB) campoVerdadB.focus();
       return;
     }
     avisoVerdadTexto("");
@@ -2031,7 +2388,11 @@
       const respuesta = await fetch("/api/tabla-verdad", {
         method: "POST",
         headers: { "Content-Type": "application/json", ...cabecerasIA() },
-        body: JSON.stringify({ formula, usar_ia: Boolean(usarIA) })
+        body: JSON.stringify({
+          formula,
+          formula_b: formulaB || undefined,
+          usar_ia: Boolean(usarIA)
+        })
       });
       const datos = await respuesta.json();
       if (!datos.ok) {
@@ -2048,9 +2409,11 @@
       renderTablaVerdad(datos);
     } catch (error) {
       avisoVerdadTexto(error.message || "No se ha podido generar la tabla.");
+      return false;
     } finally {
       ponerCargandoVerdad(false);
     }
+    return true;
   }
 
   if (formVerdad) {
@@ -2058,6 +2421,15 @@
   }
   if (btnVerdadAE) {
     btnVerdadAE.addEventListener("click", () => calcularTablaVerdad(null, true));
+  }
+  const btnVerdadComparar = $("#btn-verdad-comparar");
+  if (btnVerdadComparar) {
+    btnVerdadComparar.addEventListener("click", () =>
+      calcularTablaVerdad(null, false, true));
+  }
+  const btnVerdadCSV = $("#btn-verdad-csv");
+  if (btnVerdadCSV) {
+    btnVerdadCSV.addEventListener("click", exportarTablaCSV);
   }
   $$(".verdad__chip").forEach((chip) => {
     chip.addEventListener("click", () => {
@@ -2086,6 +2458,166 @@
           const guardada = localStorage.getItem("logica.verdad.formula");
           if (guardada) campoVerdad.value = guardada;
         }
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Comprobador de deducciones propias                                 */
+  /* ------------------------------------------------------------------ */
+  const btnComprobar = $("#btn-comprobar");
+  const formComprobar = $("#comprobar-form");
+  const campoComprobarPremisas = $("#comprobar-premisas");
+  const campoComprobarMeta = $("#comprobar-meta");
+  const campoComprobarLineas = $("#comprobar-lineas");
+  const resultadoComprobar = $("#comprobar-resultado");
+  const avisoComprobar = $("#comprobar-aviso");
+  const btnComprobarEjercicio = $("#btn-comprobar-ejercicio");
+
+  function avisoComprobarTexto(texto) {
+    if (!avisoComprobar) return;
+    avisoComprobar.textContent = texto || "";
+    avisoComprobar.hidden = !texto;
+  }
+
+  function cargarEjercicioEnComprobador(conEjemplo = false) {
+    if (conEjemplo && (!estado.items || !estado.items.length)) {
+      campoComprobarPremisas.value = "p→q\np";
+      campoComprobarMeta.value = "q";
+      campoComprobarLineas.value =
+        "p→q ; Premisa\np ; Premisa\nq ; MP ; 1,2";
+      return;
+    }
+    if (!estado.items || !estado.items.length) return;
+    const items = estado.items;
+    campoComprobarPremisas.value = items.slice(0, -1)
+      .map((item) => item.formula).filter(Boolean).join("\n");
+    campoComprobarMeta.value =
+      (items[items.length - 1] && items[items.length - 1].formula) || "";
+    const lineas = [];
+    items.slice(0, -1).forEach((item, i) => {
+      if (item.formula) lineas.push(item.formula + " ; Premisa");
+    });
+    lineas.push(items[items.length - 1].formula + " ; Demuéstralo aquí");
+    campoComprobarLineas.value = lineas.join("\n");
+  }
+
+  function renderComprobador(datos) {
+    resultadoComprobar.textContent = "";
+    const correcto = Boolean(datos.ok);
+    resultadoComprobar.append(crear("div", "comprobador__resumen " +
+      (correcto ? "comprobador__resumen--ok" : "comprobador__resumen--mal"),
+      correcto ? "✓ " + (datos.resumen || "Deducción correcta.")
+        : "✗ " + (datos.resumen || "Hay líneas por revisar.")));
+
+    if (datos.premisas && datos.premisas.length) {
+      resultadoComprobar.append(crear("p", "comprobador__meta-linea",
+        "Premisas: " + datos.premisas.join(", ") +
+        (datos.meta ? "  ·  Conclusión: " + datos.meta : "")));
+    }
+
+    if (!datos.lineas) {
+      resultadoComprobar.append(crear("p", "comprobador__error",
+        datos.error || "No se ha podido comprobar la deducción."));
+      return;
+    }
+
+    const lista = crear("div", "comprobador__lista");
+    datos.lineas.forEach((ln) => {
+      const fila = crear("div", "comprobador__linea " +
+        (ln.ok ? "comprobador__linea--ok" : "comprobador__linea--mal"));
+      const cuerpo = crear("div", "comprobador__cuerpo-linea");
+      cuerpo.append(crear("span", "comprobador__formula", ln.formula));
+      const detalle = [ln.rule || "sin regla"];
+      if (ln.refs && ln.refs.length) detalle.push("líneas " + ln.refs.join(","));
+      cuerpo.append(crear("span", "comprobador__meta-linea",
+        detalle.join(" · ")));
+      if (!ln.ok && ln.error) {
+        cuerpo.append(crear("p", "comprobador__error", ln.error));
+      }
+      fila.append(
+        crear("span", "comprobador__num", String(ln.n)),
+        cuerpo,
+        crear("span", "comprobador__estado", ln.ok ? "✓" : "✗")
+      );
+      lista.append(fila);
+    });
+    resultadoComprobar.append(lista);
+
+    if (datos.error) {
+      resultadoComprobar.append(crear("p", "comprobador__error", datos.error));
+    }
+  }
+
+  async function comprobarDeduccion(evento) {
+    if (evento) evento.preventDefault();
+    const premisas = campoComprobarPremisas.value.split(/\r?\n/)
+      .map((p) => p.trim()).filter(Boolean);
+    const meta = campoComprobarMeta.value.trim();
+    const lineas = campoComprobarLineas.value.trim();
+    if (!premisas.length || !meta || !lineas) {
+      avisoComprobarTexto("Escribe al menos una premisa, la conclusión y " +
+        "las líneas de la deducción.");
+      return;
+    }
+    avisoComprobarTexto("");
+    if (btnComprobarEjercicio) {
+      btnComprobarEjercicio.disabled = true;
+      const texto = btnComprobarEjercicio.querySelector(
+        ".verdad__calcular-texto");
+      const cargando = btnComprobarEjercicio.querySelector(
+        ".verdad__calcular-cargando");
+      if (texto) texto.hidden = true;
+      if (cargando) cargando.hidden = false;
+    }
+    try {
+      const datos = await pedir("/api/comprobar", {
+        premises: premisas,
+        goal: meta,
+        lines: lineas,
+      });
+      if (!datos.ok && !datos.lineas) {
+        throw new Error(datos.error || "No se ha podido comprobar.");
+      }
+      renderComprobador(datos);
+    } catch (error) {
+      avisoComprobarTexto(error.message ||
+        "No se ha podido comprobar la deducción.");
+    } finally {
+      if (btnComprobarEjercicio) {
+        btnComprobarEjercicio.disabled = false;
+        const texto = btnComprobarEjercicio.querySelector(
+          ".verdad__calcular-texto");
+        const cargando = btnComprobarEjercicio.querySelector(
+          ".verdad__calcular-cargando");
+        if (texto) texto.hidden = false;
+        if (cargando) cargando.hidden = true;
+      }
+    }
+  }
+
+  if (formComprobar) {
+    formComprobar.addEventListener("submit", comprobarDeduccion);
+  }
+  const btnComprobarEjemplo = $("#btn-comprobar-ejemplo");
+  if (btnComprobarEjemplo) {
+    btnComprobarEjemplo.addEventListener("click", () => {
+      cargarEjercicioEnComprobador(true);
+      avisoComprobarTexto("");
+      resultadoComprobar.textContent = "";
+      resultadoComprobar.append(crear("p", "verdad__vacio",
+        "Pulsa «Comprobar líneas» para validar el ejemplo."));
+    });
+  }
+  if (btnComprobar) {
+    configurarMenuLateral({
+      menu: $("#menu-comprobar"),
+      boton: btnComprobar,
+      botonCerrar: $("#btn-cerrar-comprobar")
+    });
+    btnComprobar.addEventListener("click", () => {
+      if (campoComprobarPremisas && !campoComprobarPremisas.value.trim()) {
+        cargarEjercicioEnComprobador(false);
       }
     });
   }
@@ -2873,15 +3405,83 @@
   }
 
   /* ------------------------------------------------------------------ */
+  /* Restaurar un ejercicio compartido por enlace                       */
+  /* ------------------------------------------------------------------ */
+  function restaurarEjercicioCompartido() {
+    let codigo = "";
+    try {
+      codigo = new URLSearchParams(window.location.search).get("e") || "";
+    } catch (error) {
+      return false;
+    }
+    if (!codigo) return false;
+    let datos;
+    try {
+      datos = JSON.parse(desdeBase64UTF8(codigo));
+    } catch (error) {
+      return false;
+    }
+    if (!datos || !Array.isArray(datos.items) || !datos.items.length) {
+      return false;
+    }
+    if (datos.calculo === "prop" || datos.calculo === "pred") {
+      fijarCalculo(datos.calculo);
+    }
+    if (typeof datos.frases === "string" && datos.frases.trim()) {
+      area.value = datos.frases;
+    }
+    estado.items = datos.items;
+    estado.lineas = Array.isArray(datos.lines) ? datos.lines : [];
+    estado.plain = datos.plain || "";
+    estado.vocab = Object.entries(datos.vocab || {})
+      .map(([letter, text]) => ({ letter, text }));
+    pintarFormulas(estado.items);
+    pintarVocabulario(estado.vocab);
+    $("#formalizacion").hidden = false;
+    marcarPaso(1, "hecho");
+    marcarPaso(2, "activo");
+    if (estado.lineas.length) {
+      pintarResumen(
+        estado.items.slice(0, -1).map((item) => item.formula).filter(Boolean),
+        (estado.items[estado.items.length - 1] || {}).formula || "");
+      pintarPrueba(estado.lineas);
+      pintarExplicaciones(estado.lineas);
+      $("#resultado").hidden = false;
+      $("#explicacion").hidden = false;
+      marcarPaso(2, "hecho");
+      marcarPaso(3, "activo");
+    }
+    return true;
+  }
+
+  /* ------------------------------------------------------------------ */
   /* Arranque                                                           */
   /* ------------------------------------------------------------------ */
   configurarProveedorIA();
   configurarInstalacion();
   configurarMarquesinasSimbolos();
-  restaurarBorrador();
+  const ejercicioCompartido = restaurarEjercicioCompartido();
+  if (!ejercicioCompartido) restaurarBorrador();
   if (!area.value) {
     area.value = EJEMPLOS.corro.texto;
   }
   fijarCalculo(estado.calculo);
   actualizarAprendizaje();
+  comprobarSalud();
+  setInterval(comprobarSalud, 60000);
+  window.addEventListener("online", () => {
+    comprobarSalud();
+    actualizarAprendizaje();
+  });
+  window.addEventListener("offline", () => {
+    conexionActiva = false;
+    estadoServidor("error",
+      "Sin conexión. Puedes seguir consultando los últimos resultados " +
+      "guardados de este ejercicio.");
+    actualizarAprendizaje();
+  });
+  const btnReintentarServidor = $("#btn-reintentar-servidor");
+  if (btnReintentarServidor) {
+    btnReintentarServidor.addEventListener("click", comprobarSalud);
+  }
 })();

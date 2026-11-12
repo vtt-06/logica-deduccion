@@ -18,6 +18,7 @@ import re
 import socket
 import sys
 import traceback
+from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, unquote, urlparse
@@ -27,7 +28,8 @@ sys.path.insert(0, str(RAIZ.parent))
 
 from formulas import F, parse_formula, render, atoms       # noqa: E402
 from prover import prove                                  # noqa: E402
-from tablas_verdad import generar_tabla                   # noqa: E402
+from tablas_verdad import comparar_formulas, generar_tabla  # noqa: E402
+from comprobador import comprobar                          # noqa: E402
 import formalize as fz                                    # noqa: E402
 from aprendizaje import Aprendizaje                       # noqa: E402
 from version import VERSION                               # noqa: E402
@@ -1081,6 +1083,17 @@ def api_tabla_verdad(data, proveedor=None):
     fórmula válida y se intenta de nuevo.
     """
     texto = data.get("formula", "")
+    texto_b = str(data.get("formula_b", "") or "").strip()
+    if texto_b:
+        try:
+            return {"ok": True, **comparar_formulas(texto, texto_b)}
+        except ValueError as exc:
+            return {"ok": False, "error": str(exc), "puede_ae": False}
+        except Exception:
+            traceback.print_exc()
+            return {"ok": False,
+                    "error": "No se han podido comparar las fórmulas.",
+                    "puede_ae": False}
     try:
         return {"ok": True, "ia_aplicada": False, **generar_tabla(texto)}
     except ValueError as exc:
@@ -1115,6 +1128,51 @@ def api_tabla_verdad(data, proveedor=None):
     return {"ok": True, **tabla}
 
 
+def api_comprobar(data):
+    """Comprueba una deducción escrita por el alumno."""
+    premisas = data.get("premises") or data.get("premisas") or []
+    meta = data.get("goal") or data.get("conclusion") or ""
+    texto = data.get("lines") or data.get("lineas") or ""
+    if isinstance(premisas, str):
+        premisas = [p for p in premisas.splitlines() if p.strip()]
+    if not isinstance(premisas, list) or not str(meta).strip():
+        return {"ok": False,
+                "error": "Faltan las premisas o la conclusión del ejercicio."}
+    return comprobar([str(p) for p in premisas], str(meta), str(texto))
+
+
+def api_salud():
+    """Estado del servicio para el aviso de conexión de la interfaz."""
+    datos = MEMORIA.estadisticas()
+    return {
+        "ok": True,
+        "estado": "ok",
+        "version": VERSION,
+        "hora": datetime.now().isoformat(timespec="seconds"),
+        "ia": asistente_ia.configurado(),
+        "modelo": asistente_ia.modelo(),
+        "memoria": datos,
+    }
+
+
+def api_memoria_exportar():
+    paquete = MEMORIA.exportar()
+    return {"ok": True, **paquete}
+
+
+def api_memoria_importar(data):
+    paquete = data.get("paquete", data) if isinstance(data, dict) else data
+    try:
+        datos = MEMORIA.reemplazar(paquete)
+    except ValueError as exc:
+        return {"ok": False, "error": str(exc)}
+    except Exception:
+        traceback.print_exc()
+        return {"ok": False,
+                "error": "No se ha podido importar la memoria: archivo no válido."}
+    return {"ok": True, "mensaje": "Memoria importada.", **datos}
+
+
 # ==========================================================================
 # Servidor HTTP
 # ==========================================================================
@@ -1130,6 +1188,18 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(cuerpo)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(cuerpo)
+
+    def _descarga_json(self, payload, nombre):
+        cuerpo = json.dumps(payload, ensure_ascii=False,
+                            indent=1).encode("utf-8")
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(cuerpo)))
+        self.send_header("Content-Disposition",
+                         'attachment; filename="%s"' % nombre)
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(cuerpo)
@@ -1171,8 +1241,12 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         ruta = urlparse(self.path).path
-        if ruta == "/api/salud":
-            self._json({"ok": True})
+        if ruta == "/api/salud" or ruta == "/health":
+            self._json(api_salud())
+            return
+        if ruta == "/api/memoria/exportar":
+            self._descarga_json(api_memoria_exportar(),
+                               "fralog-memoria.json")
             return
         if ruta == "/api/memoria":
             self._json(api_memoria(parse_qs(urlparse(self.path).query)))
@@ -1219,6 +1293,10 @@ class Handler(BaseHTTPRequestHandler):
             self._json(api_deducir(data, proveedor=proveedor))
         elif ruta == "/api/tabla-verdad":
             self._json(api_tabla_verdad(data, proveedor=proveedor))
+        elif ruta == "/api/comprobar":
+            self._json(api_comprobar(data))
+        elif ruta == "/api/memoria/importar":
+            self._json(api_memoria_importar(data))
         else:
             self._json({"ok": False, "error": "Ruta desconocida."}, 404)
 

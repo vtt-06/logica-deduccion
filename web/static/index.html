@@ -18,6 +18,13 @@
 <body>
   <a class="saltar" href="#entrada">Ir al formulario</a>
 
+  <div id="estado-servidor" class="estado-servidor" role="status" hidden>
+    <span class="estado-servidor__punto" aria-hidden="true"></span>
+    <span id="estado-servidor-texto" class="estado-servidor__texto"></span>
+    <button type="button" id="btn-reintentar-servidor"
+            class="estado-servidor__boton">Reintentar</button>
+  </div>
+
   <div id="cursor-glow" class="cursor-glow" aria-hidden="true"></div>
 
   <div class="accesos-laterales">
@@ -69,6 +76,22 @@
   </div>
 
   <div class="accesos-derecha">
+    <button type="button" id="btn-comprobar"
+            class="acceso-lateral acceso-lateral--comprobar acceso-lateral--derecha"
+            aria-controls="menu-comprobar" aria-expanded="false"
+            title="Comprobar una deducción escrita por ti">
+      <svg class="acceso-lateral__icono" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 3.5h10l4 4v13H5a1.5 1.5 0 0 1-1.5-1.5V5A1.5 1.5 0 0 1 5 3.5Z"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linejoin="round"/>
+        <path d="M15 3.5V8h4M7.5 12.5l1.7 1.7 3.1-3.1"
+              fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7.5 18h6" fill="none" stroke="currentColor"
+              stroke-width="1.7" stroke-linecap="round"/>
+      </svg>
+      <span>Comprobar</span>
+    </button>
     <button type="button" id="btn-verdad"
             class="acceso-lateral acceso-lateral--verdad acceso-lateral--derecha"
             aria-controls="menu-verdad" aria-expanded="false"
@@ -325,8 +348,26 @@
         <button type="button" id="btn-copiar" class="boton boton--secundario">
           Copiar deducción
         </button>
+        <button type="button" id="btn-copiar-formalizacion"
+                class="boton boton--secundario">
+          Copiar formalización
+        </button>
         <button type="button" id="btn-descargar" class="boton boton--fantasma">
           Descargar .txt
+        </button>
+        <button type="button" id="btn-descargar-md"
+                class="boton boton--fantasma">
+          Descargar .md
+        </button>
+        <button type="button" id="btn-descargar-csv"
+                class="boton boton--fantasma">
+          Exportar CSV
+        </button>
+        <button type="button" id="btn-imprimir" class="boton boton--fantasma">
+          Imprimir / PDF
+        </button>
+        <button type="button" id="btn-compartir" class="boton boton--principal">
+          Compartir ejercicio
         </button>
       </div>
       <p id="aviso-copiar" class="aviso aviso--ok" role="status" hidden></p>
@@ -2199,8 +2240,22 @@ meta: (Λx)(H(x)→¬A(x))</pre>
         <aside class="memoria__lista" aria-label="Frases y ejercicios guardados">
           <div class="memoria__lista-cabecera">
             <p id="memoria-cuenta" class="memoria__cuenta">Cargando…</p>
-            <button type="button" id="btn-recargar-memoria"
-                    class="memoria__recargar">Actualizar</button>
+            <div class="memoria__acciones">
+              <button type="button" id="btn-exportar-memoria"
+                      class="memoria__recargar"
+                      title="Descargar una copia de la memoria en JSON">
+                Exportar
+              </button>
+              <button type="button" id="btn-importar-memoria"
+                      class="memoria__recargar"
+                      title="Cargar una memoria guardada en JSON">
+                Importar
+              </button>
+              <button type="button" id="btn-recargar-memoria"
+                      class="memoria__recargar">Actualizar</button>
+              <input type="file" id="input-importar-memoria"
+                     accept="application/json,.json" hidden>
+            </div>
           </div>
           <div id="memoria-items" class="memoria__items">
             <p class="memoria__vacio">Cargando la memoria local…</p>
@@ -2249,6 +2304,13 @@ meta: (Λx)(H(x)→¬A(x))</pre>
                       spellcheck="false" autocapitalize="off"
                       placeholder="(p∧q)→r"></textarea>
 
+            <label class="verdad__etiqueta" for="verdad-formula-b">
+              Comparar con otra fórmula (opcional)
+            </label>
+            <textarea id="verdad-formula-b" class="verdad__campo" rows="2"
+                      spellcheck="false" autocapitalize="off"
+                      placeholder="¬q→¬p"></textarea>
+
             <p class="verdad__ejemplos-titulo">Ejemplos rápidos</p>
             <div class="verdad__ejemplos" aria-label="Fórmulas de ejemplo">
               <button type="button" class="verdad__chip"
@@ -2277,6 +2339,14 @@ meta: (Λx)(H(x)→¬A(x))</pre>
                       class="verdad__secundario">
                 Usar la conclusión actual
               </button>
+              <button type="button" id="btn-verdad-comparar"
+                      class="verdad__secundario">
+                Comparar fórmulas
+              </button>
+              <button type="button" id="btn-verdad-csv"
+                      class="verdad__secundario">
+                Exportar CSV
+              </button>
               <button type="button" id="btn-verdad-ae"
                       class="verdad__secundario verdad__ae" hidden>
                 Ayuda externa (A.E.)
@@ -2303,6 +2373,88 @@ meta: (Λx)(H(x)→¬A(x))</pre>
           <h3 id="verdad-titulo-resultado">Resultado</h3>
           <p class="verdad__vacio">
             Escribe una fórmula y pulsa «Generar tabla» para ver sus valores.
+          </p>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MENÚ SECUNDARIO: COMPROBADOR ================= -->
+  <div id="menu-comprobar" class="menu-teoria menu-comprobar"
+       role="dialog" aria-modal="true"
+       aria-labelledby="titulo-menu-comprobar" hidden>
+    <div class="menu-teoria__panel">
+      <header class="menu-teoria__cabecera menu-verdad__cabecera">
+        <div>
+          <p class="menu-teoria__etiqueta">Herramienta · Deducción</p>
+          <h2 id="titulo-menu-comprobar">Comprueba tu deducción</h2>
+          <p class="menu-teoria__intro">
+            Escribe la deducción paso a paso y comprueba si cada línea aplica
+            correctamente una regla del curso.
+          </p>
+        </div>
+        <button type="button" id="btn-cerrar-comprobar"
+                class="menu-teoria__cerrar">
+          <span aria-hidden="true">×</span> Cerrar
+        </button>
+      </header>
+
+      <div class="menu-verdad__cuerpo comprobador__cuerpo">
+        <section class="verdad__panel comprobador__entrada"
+                 aria-labelledby="comprobar-titulo-entrada">
+          <h3 id="comprobar-titulo-entrada">Tu deducción</h3>
+          <form id="comprobar-form" novalidate>
+            <label class="verdad__etiqueta" for="comprobar-premisas">
+              Premisas (una por línea)
+            </label>
+            <textarea id="comprobar-premisas" class="verdad__campo" rows="4"
+                      spellcheck="false" autocapitalize="off"
+                      placeholder="p→q&#10;p"></textarea>
+
+            <label class="verdad__etiqueta" for="comprobar-meta">
+              Conclusión
+            </label>
+            <textarea id="comprobar-meta" class="verdad__campo" rows="2"
+                      spellcheck="false" autocapitalize="off"
+                      placeholder="q"></textarea>
+
+            <label class="verdad__etiqueta" for="comprobar-lineas">
+              Deducción: fórmula ; regla ; referencias
+            </label>
+            <textarea id="comprobar-lineas" class="verdad__campo comprobador__lineas"
+                      rows="9" spellcheck="false" autocapitalize="off"
+                      placeholder="p→q ; Premisa&#10;p ; Premisa&#10;q ; MP ; 1,2"></textarea>
+            <p class="comprobador__ayuda">
+              Separa los campos con punto y coma. En las referencias puedes
+              usar <code>1,2</code> o un rango <code>3-6</code>. Reglas:
+              <code>MP</code>, <code>MT</code>, <code>IC</code>,
+              <code>Simp</code>, <code>Ad</code>, <code>SD</code>,
+              <code>SH</code>, <code>DN</code>, <code>DM</code>,
+              <code>TD</code>, <code>Abs</code>…
+            </p>
+            <div class="verdad__acciones">
+              <button type="submit" id="btn-comprobar-ejercicio"
+                      class="verdad__calcular">
+                <span class="verdad__calcular-texto">Comprobar líneas</span>
+                <span class="verdad__calcular-cargando" hidden>Comprobando…</span>
+              </button>
+              <button type="button" id="btn-comprobar-ejemplo"
+                      class="verdad__secundario">
+                Ver un ejemplo
+              </button>
+            </div>
+            <p id="comprobar-aviso" class="verdad__aviso" role="alert" hidden></p>
+          </form>
+        </section>
+
+        <section id="comprobar-resultado"
+                 class="verdad__panel comprobador__resultado"
+                 aria-live="polite"
+                 aria-labelledby="comprobar-titulo-resultado">
+          <h3 id="comprobar-titulo-resultado">Resultado</h3>
+          <p class="verdad__vacio">
+            Escribe tu deducción y pulsa «Comprobar líneas» para ver qué pasos
+            son correctos y cuáles hay que revisar.
           </p>
         </section>
       </div>
@@ -2408,7 +2560,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
 
   <footer class="pie">
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">FraLog · v2.2.8</span>
+      <span id="version-texto" class="version-texto">FraLog · v2.2.9</span>
     </div>
   </footer>
 

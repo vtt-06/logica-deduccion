@@ -18,6 +18,7 @@ formalización en frases nuevas:
 El almacén es un JSON local.  No se envía nada a internet.
 """
 
+import copy
 import hashlib
 import json
 import os
@@ -629,6 +630,53 @@ class Aprendizaje:
                 if ejercicio.get("id") == identificador:
                     return dict(ejercicio)
         return None
+
+    # -- copia de seguridad -------------------------------------------------
+    def exportar(self):
+        """Copia completa de la memoria, lista para guardar en un JSON."""
+        with self._lock:
+            return {
+                "formato": "fralog-memoria",
+                "version": 1,
+                "exportado": datetime.now().isoformat(timespec="seconds"),
+                "datos": copy.deepcopy(self.datos),
+            }
+
+    def reemplazar(self, paquete):
+        """Sustituye la memoria actual por la de un paquete exportado."""
+        if isinstance(paquete, dict) and isinstance(paquete.get("datos"), dict):
+            datos = paquete["datos"]
+        else:
+            datos = paquete
+        if not isinstance(datos, dict):
+            raise ValueError("El archivo no tiene el formato de la memoria.")
+        exactas = datos.get("exactas")
+        plantillas = datos.get("plantillas")
+        ejercicios = datos.get("ejercicios")
+        banco = datos.get("banco")
+        if exactas is None:
+            exactas = {}
+        if plantillas is None:
+            plantillas = []
+        if ejercicios is None:
+            ejercicios = []
+        if banco is None:
+            banco = []
+        if (not isinstance(exactas, dict) or not isinstance(plantillas, list)
+                or not isinstance(ejercicios, list)
+                or not isinstance(banco, list)):
+            raise ValueError("El archivo no tiene el formato de la memoria.")
+        limpio = {
+            "version": 1,
+            "exactas": exactas,
+            "plantillas": plantillas[:LIMITE_PLANTILLAS],
+            "ejercicios": ejercicios[:LIMITE_EJERCICIOS],
+            "banco": banco[:LIMITE_BANCO],
+        }
+        with self._lock:
+            self.datos = copy.deepcopy(limpio)
+            self._guardar()
+            return self.estadisticas()
 
     # -- mantenimiento -----------------------------------------------------
     def estadisticas(self):

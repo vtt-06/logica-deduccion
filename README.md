@@ -4,8 +4,22 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.2.8.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.2.9.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
+
+### Novedades de la 2.2.9
+
+- **Comprobador de deducciones propias:** permite escribir una deducción línea
+  a línea (`fórmula ; regla ; referencias`) y valida cada paso.
+- **Copia de seguridad de la memoria:** exportar e importar todo el
+  aprendizaje en un archivo JSON.
+- **Exportar y compartir:** copiar la formalización, descargar la deducción en
+  Markdown o CSV, imprimirla en PDF y generar un enlace con el ejercicio.
+- **Tablas de verdad más completas:** columnas de subfórmulas, comparación de
+  dos fórmulas para ver si son equivalentes y exportación a CSV.
+- **Uso sin conexión:** se guardan los últimos resultados y se avisa cuando el
+  servidor o la ayuda exterior (A.E.) no responden.
+- **Diagnóstico:** el endpoint `/api/salud` informa del estado del servicio.
 
 Las reglas y la notación están tomadas de:
 
