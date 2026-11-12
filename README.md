@@ -4,10 +4,10 @@ Programa que toma un conjunto de frases por teclado, construye el vocabulario
 empezando por la letra `p`, propone la formalización y obtiene la deducción
 formal siguiendo las reglas de la colección de fórmulas del curso.
 
-**Versión actual: 2.2.9.** La web la muestra al pie, dentro de un rectángulo
+**Versión actual: 2.3.0.** La web la muestra al pie, dentro de un rectángulo
 negro con el texto en degradado rojo, naranja y morado.
 
-### Novedades de la 2.2.9
+### Novedades de la 2.3.0
 
 - **Comprobador de deducciones propias:** permite escribir una deducción línea
   a línea (`fórmula ; regla ; referencias`) y valida cada paso.

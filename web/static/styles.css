@@ -1483,6 +1483,10 @@ body.menu-lateral-abierto { overflow: hidden; }
   right: 0;
   top: 50%;
   z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.45rem;
   transform: translateY(-50%);
 }
 
