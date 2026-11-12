@@ -463,17 +463,23 @@
       </header>
 
       <div class="menu-teoria__cuerpo">
-        <nav class="menu-teoria__indice" aria-label="Contenido de las definiciones">
-          <p class="menu-teoria__indice-titulo">Capítulos</p>
-          <a href="#definiciones-argumentos">1. Argumentos y enunciados</a>
-          <a href="#definiciones-enunciados">2. Lógica de enunciados</a>
-          <a href="#definiciones-formas">3. Formas argumentativas</a>
-          <a href="#definiciones-sistemas">4. Sistemas formales</a>
-          <a href="#definiciones-natural">5. Deducción natural</a>
-          <a href="#definiciones-sintaxis">6. Predicados: sintaxis</a>
-          <a href="#definiciones-semantica">7. Predicados: semántica</a>
-          <a href="#definiciones-kl">8. Cálculo KL</a>
-        </nav>
+        <div class="menu-teoria__lateral">
+          <nav class="menu-teoria__indice" aria-label="Contenido de las definiciones">
+            <p class="menu-teoria__indice-titulo">Capítulos</p>
+            <a href="#definiciones-argumentos">1. Argumentos y enunciados</a>
+            <a href="#definiciones-enunciados">2. Lógica de enunciados</a>
+            <a href="#definiciones-formas">3. Formas argumentativas</a>
+            <a href="#definiciones-sistemas">4. Sistemas formales</a>
+            <a href="#definiciones-natural">5. Deducción natural</a>
+            <a href="#definiciones-sintaxis">6. Predicados: sintaxis</a>
+            <a href="#definiciones-semantica">7. Predicados: semántica</a>
+            <a href="#definiciones-kl">8. Cálculo KL</a>
+          </nav>
+          <button type="button" class="menu-teoria__cerrar-abajo"
+                  data-cerrar-menu>
+            <span aria-hidden="true">×</span> Cerrar y volver
+          </button>
+        </div>
 
         <div class="menu-teoria__contenido">
           <div class="definiciones-aviso">
@@ -1494,20 +1500,26 @@ x → σ(x)</p>
       </header>
 
       <div class="menu-teoria__cuerpo">
-        <nav class="menu-teoria__indice" aria-label="Contenido de la guía">
-          <p class="menu-teoria__indice-titulo">Contenido</p>
-          <a href="#teoria-basico">1. La idea básica</a>
-          <a href="#teoria-conectivas">2. Conectivas</a>
-          <a href="#teoria-diccionario">3. Diccionario de frase a fórmula</a>
-          <a class="menu-teoria__indice-sub" href="#teoria-resumen">· Formas del resumen (PDF)</a>
-          <a href="#teoria-cuantificadores">4. Cuantificadores</a>
-          <a href="#teoria-precedencia">5. Precedencia y paréntesis</a>
-          <a href="#teoria-reglas">6. Reglas de deducción</a>
-          <a href="#teoria-estrategia">7. Estrategia de prueba</a>
-          <a href="#teoria-ejercicio">8. Ejercicio resuelto</a>
-          <a href="#teoria-predicados">9. Ejemplo con predicados</a>
-          <a href="#teoria-errores">10. Errores frecuentes</a>
-        </nav>
+        <div class="menu-teoria__lateral">
+          <nav class="menu-teoria__indice" aria-label="Contenido de la guía">
+            <p class="menu-teoria__indice-titulo">Contenido</p>
+            <a href="#teoria-basico">1. La idea básica</a>
+            <a href="#teoria-conectivas">2. Conectivas</a>
+            <a href="#teoria-diccionario">3. Diccionario de frase a fórmula</a>
+            <a class="menu-teoria__indice-sub" href="#teoria-resumen">· Formas del resumen (PDF)</a>
+            <a href="#teoria-cuantificadores">4. Cuantificadores</a>
+            <a href="#teoria-precedencia">5. Precedencia y paréntesis</a>
+            <a href="#teoria-reglas">6. Reglas de deducción</a>
+            <a href="#teoria-estrategia">7. Estrategia de prueba</a>
+            <a href="#teoria-ejercicio">8. Ejercicio resuelto</a>
+            <a href="#teoria-predicados">9. Ejemplo con predicados</a>
+            <a href="#teoria-errores">10. Errores frecuentes</a>
+          </nav>
+          <button type="button" class="menu-teoria__cerrar-abajo"
+                  data-cerrar-menu>
+            <span aria-hidden="true">×</span> Cerrar y volver
+          </button>
+        </div>
 
         <div class="menu-teoria__contenido">
           <!-- 1 -->
@@ -2396,7 +2408,7 @@ meta: (Λx)(H(x)→¬A(x))</pre>
 
   <footer class="pie">
     <div class="version-caja" aria-label="Versión de la aplicación">
-      <span id="version-texto" class="version-texto">FraLog · v2.2.7</span>
+      <span id="version-texto" class="version-texto">FraLog · v2.2.8</span>
     </div>
   </footer>
 
